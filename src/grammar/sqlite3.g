@@ -49,6 +49,7 @@ tokens {
   IF_T="IF";
   IGNORE="IGNORE";
   IN="IN";
+  INDEX="INDEX";
   INITIALLY="INITIALLY";
   INSERT="INSERT";
   IMMEDIATE="IMMEDIATE";
@@ -73,7 +74,10 @@ tokens {
   THEN="THEN";
   UNIQUE="UNIQUE";
   UPDATE="UPDATE";
+  USING="USING";
+  VIRTUAL="VIRTUAL";
   WHEN="WHEN";
+  WHERE="WHERE";
   WITHOUT="WITHOUT";
 
 //ast
@@ -83,6 +87,8 @@ tokens {
   COLUMNCONSTRAINT;
   TABLECONSTRAINT;
   CREATETABLE;
+  CREATEINDEX;
+  INDEXEDCOLUMN;
   KEYWORDASTABLENAME;
   KEYWORDASCOLUMNNAME;
 }
@@ -94,7 +100,7 @@ protected DOT:;
 
 ID
   :
-  // 00C0 - 02B8 load of good looking unicode chars
+  // 0080 - 02B8 load of good looking unicode chars
   // there might be more allowed characters
   ('a'..'z'|'_') ('a'..'z'|'0'..'9'|'_'|'\u0080'..'\u02B8')*
   ;
@@ -110,7 +116,7 @@ QUOTEDLITERAL
 
 NUMERIC
     : ( (DIGIT)+ ( '.' (DIGIT)* )?
-      | '.' { _ttype=DOT; } (DIGIT)+)
+      | '.' (DIGIT)+)
       ( 'e' (PLUS|MINUS)? (DIGIT)+ )?
 	;
 
@@ -216,11 +222,13 @@ statementlist
 statement
   :
   createtable
+  | createindex
   ;
 
 create_statements
   :
   createtable
+  | createindex
   ;
 
 keywordastablename
@@ -245,6 +253,7 @@ keywordastablename
   | INITIALLY
   | IMMEDIATE
   | MATCH
+  | NO
   | RAISE
   | REGEXP
   | REPLACE
@@ -258,11 +267,22 @@ keywordastablename
 
 createtable
   :
-  CREATE (TEMP|TEMPORARY)? TABLE (IF_T NOT EXISTS)? (tablename | keywordastablename)
-  ( LPAREN columndef (COMMA columndef)* ((COMMA)? tableconstraint)* RPAREN (WITHOUT ROWID)?
-  | AS selectstmt
+  (CREATE (TEMP|TEMPORARY)? TABLE (IF_T NOT EXISTS)? (tablename | keywordastablename)
+    ( LPAREN columndef (COMMA columndef)* ((COMMA)? tableconstraint)* RPAREN (WITHOUT ROWID)?
+    | AS selectstmt
+    )
+    {#createtable = #([CREATETABLE, "CREATETABLE"], #createtable);}
   )
-  {#createtable = #([CREATETABLE, "CREATETABLE"], #createtable);}
+  |(CREATE VIRTUAL TABLE (IF_T NOT EXISTS)? (tablename | keywordastablename)
+    USING name (LPAREN (expr (COMMA expr)*)? RPAREN)?		// TODO: Not sure about using "expr" here
+   )
+  ;
+
+createindex
+  :
+  CREATE (UNIQUE)? INDEX (IF_T NOT EXISTS)? (tablename | keywordastablename) ON (tablename | keywordastablename)
+    ( LPAREN indexedcolumn (COMMA indexedcolumn)* RPAREN (WHERE expr)? )
+    {#createindex = #([CREATEINDEX, "CREATEINDEX"], #createindex);}
   ;
 
 keywordascolumnname
@@ -304,6 +324,7 @@ keywordascolumnname
   | NULL_T
   | MATCH
   | EXISTS
+  | NO
   | ON
   | RAISE
   | REFERENCES
@@ -340,7 +361,7 @@ name : ID | QUOTEDID | QUOTEDLITERAL | STRINGLITERAL;
 
 type_name
   :
-  (name)+
+  (name | keywordastablename)+
   (LPAREN signednumber (COMMA signednumber)? RPAREN)?
   {#type_name = #([TYPE_NAME, "TYPE_NAME"], #type_name);}
   ;
@@ -352,7 +373,7 @@ columnconstraint
   | (NOT)? NULL_T (conflictclause)?
   | UNIQUE (conflictclause)?
   | CHECK LPAREN expr RPAREN
-  | DEFAULT (signednumber | QUOTEDLITERAL | STRINGLITERAL | LPAREN expr RPAREN | literalvalue | ID)
+  | DEFAULT (QUOTEDLITERAL | LPAREN expr RPAREN | literalvalue | ID | keywordastablename)
   | COLLATE collationname
   | foreignkeyclause)
   {#columnconstraint = #([COLUMNCONSTRAINT, "COLUMNCONSTRAINT"], #columnconstraint);}
@@ -371,7 +392,8 @@ tableconstraint
 
 indexedcolumn
   :
-  columnname (COLLATE collationname)? (ASC|DESC)? (AUTOINCREMENT)?
+  expr (COLLATE collationname)? (ASC|DESC)? (AUTOINCREMENT)?
+  {#indexedcolumn = #([INDEXEDCOLUMN, "INDEXEDCOLUMN"], #indexedcolumn);}
   ;
 
 conflictclause
@@ -409,7 +431,8 @@ functionname
 
 expr
   :
-  subexpr ((binaryoperator | AND | OR) subexpr )*
+  ( LPAREN subexpr (COMMA subexpr)+ RPAREN binaryoperator LPAREN subexpr (COMMA subexpr)+ RPAREN )
+  | ( subexpr ((binaryoperator | AND | OR) subexpr )* )
   ;
 
 subexpr
@@ -417,7 +440,7 @@ subexpr
   ( MINUS | PLUS | TILDE | NOT)?
   ( literalvalue
 //  | bindparameter TODO
-  | ((databasename DOT)? tablename)? columnname
+  | ((databasename DOT)? tablename DOT)? columnname
   | functionname LPAREN (expr (COMMA expr)* )? RPAREN //TODO
   | castexpr
   | (EXISTS)? LPAREN (expr | selectstmt) RPAREN

@@ -1,8 +1,6 @@
 #ifndef SQLEXECUTIONAREA_H
 #define SQLEXECUTIONAREA_H
 
-#include "sqltextedit.h"
-
 #include <QWidget>
 
 class SqlTextEdit;
@@ -10,6 +8,7 @@ class SqliteTableModel;
 class DBBrowserDB;
 class QMenu;
 class QTextEdit;
+class ExtendedTableWidget;
 
 namespace Ui {
 class SqlExecutionArea;
@@ -20,7 +19,7 @@ class SqlExecutionArea : public QWidget
     Q_OBJECT
 
 public:
-    explicit SqlExecutionArea(QWidget* parent, DBBrowserDB* _db);
+    explicit SqlExecutionArea(DBBrowserDB& _db, QWidget* parent = Q_NULLPTR);
     ~SqlExecutionArea();
 
     QString getSql() const;
@@ -32,7 +31,8 @@ public:
     SqliteTableModel* getModel() { return model; }
     QTextEdit* getResultView();
     SqlTextEdit* getEditor();
-
+    ExtendedTableWidget *getTableResult();
+    
 public slots:
     virtual void finishExecution(const QString& result);
     virtual void enableSaveButton(bool enable);
@@ -41,7 +41,7 @@ public slots:
     virtual void reloadSettings();
 
 private:
-    DBBrowserDB* db;
+    DBBrowserDB& db;
     SqliteTableModel* model;
     QMenu* menuPopupSave;
     QString sqlFileName;

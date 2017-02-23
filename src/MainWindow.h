@@ -1,8 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "sqltextedit.h"
 #include "sqlitedb.h"
+#include "RemoteDatabase.h"
+#include "PlotDock.h"
 
 #include <QMainWindow>
 #include <QMap>
@@ -12,15 +13,66 @@ class EditDialog;
 class QIntValidator;
 class QLabel;
 class QModelIndex;
+class QPersistentModelIndex;
 class SqliteTableModel;
 class DbStructureModel;
 class QNetworkReply;
 class QNetworkAccessManager;
-class QTreeWidgetItem;
 
 namespace Ui {
 class MainWindow;
 }
+
+struct BrowseDataTableSettings
+{
+    int sortOrderIndex;
+    Qt::SortOrder sortOrderMode;
+    QMap<int, int> columnWidths;
+    QMap<int, QString> filterValues;
+    QMap<int, QString> displayFormats;
+    bool showRowid;
+    QString encoding;
+    QString plotXAxis;
+    QMap<QString, PlotDock::PlotSettings> plotYAxes;
+
+    friend QDataStream& operator<<(QDataStream& stream, const BrowseDataTableSettings& object)
+    {
+        stream << object.sortOrderIndex;
+        stream << static_cast<int>(object.sortOrderMode);
+        stream << object.columnWidths;
+        stream << object.filterValues;
+        stream << object.displayFormats;
+        stream << object.showRowid;
+        stream << object.encoding;
+        stream << object.plotXAxis;
+        stream << object.plotYAxes;
+
+        return stream;
+    }
+    friend QDataStream& operator>>(QDataStream& stream, BrowseDataTableSettings& object)
+    {
+        stream >> object.sortOrderIndex;
+        int sortordermode;
+        stream >> sortordermode;
+        object.sortOrderMode = static_cast<Qt::SortOrder>(sortordermode);
+        stream >> object.columnWidths;
+        stream >> object.filterValues;
+        stream >> object.displayFormats;
+        stream >> object.showRowid;
+        stream >> object.encoding;
+
+        // Versions pre 3.10.0 didn't store the following information in their project files.
+        // To be absolutely sure that nothing strange happens when we read past the stream for
+        // those cases, check for the end of the stream here.
+        if(stream.atEnd())
+            return stream;
+
+        stream >> object.plotXAxis;
+        stream >> object.plotYAxes;
+
+        return stream;
+    }
+};
 
 class MainWindow : public QMainWindow
 {
@@ -30,44 +82,15 @@ public:
     explicit MainWindow(QWidget* parent = 0);
     ~MainWindow();
 
-    DBBrowserDB* getDb() { return &db; }
+    DBBrowserDB& getDb() { return db; }
+    const RemoteDatabase& getRemote() const { return m_remoteDb; }
 
-    struct BrowseDataTableSettings
+    enum Tabs
     {
-        int sortOrderIndex;
-        Qt::SortOrder sortOrderMode;
-        QMap<int, int> columnWidths;
-        QMap<int, QString> filterValues;
-        QMap<int, QString> displayFormats;
-        bool showRowid;
-        QString encoding;
-
-        friend QDataStream& operator<<(QDataStream& stream, const MainWindow::BrowseDataTableSettings& object)
-        {
-            stream << object.sortOrderIndex;
-            stream << static_cast<int>(object.sortOrderMode);
-            stream << object.columnWidths;
-            stream << object.filterValues;
-            stream << object.displayFormats;
-            stream << object.showRowid;
-            stream << object.encoding;
-
-            return stream;
-        }
-        friend QDataStream& operator>>(QDataStream& stream, MainWindow::BrowseDataTableSettings& object)
-        {
-            stream >> object.sortOrderIndex;
-            int sortordermode;
-            stream >> sortordermode;
-            object.sortOrderMode = static_cast<Qt::SortOrder>(sortordermode);
-            stream >> object.columnWidths;
-            stream >> object.filterValues;
-            stream >> object.displayFormats;
-            stream >> object.showRowid;
-            stream >> object.encoding;
-
-            return stream;
-        }
+        StructureTab,
+        BrowseTab,
+        PragmaTab,
+        ExecuteTab
     };
 
 private:
@@ -92,18 +115,11 @@ private:
         int wal_autocheckpoint;
     } pragmaValues;
 
-    enum PlotColumns
-    {
-        PlotColumnField = 0,
-        PlotColumnX = 1,
-        PlotColumnY = 2,
-        PlotColumnDummy = 3
-    };
-
     Ui::MainWindow* ui;
 
     SqliteTableModel* m_browseTableModel;
-    SqliteTableModel* m_currentPlotModel;
+    SqliteTableModel* m_currentTabTableModel;
+
     QMenu *popupTableMenu;
     QMenu *recentFilesMenu;
     QMenu *popupSaveSqlFileMenu;
@@ -121,12 +137,13 @@ private:
 
     QMap<QString, BrowseDataTableSettings> browseTableSettings;
 
-    EditDialog* editWin;
     EditDialog* editDock;
+    PlotDock* plotDock;
     QIntValidator* gotoValidator;
 
     DBBrowserDB db;
     QString defaultBrowseTableEncoding;
+    RemoteDatabase m_remoteDb;
 
     QNetworkAccessManager* m_NetworkManager;
 
@@ -144,21 +161,23 @@ protected:
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
     void resizeEvent(QResizeEvent *event);
+    void keyPressEvent(QKeyEvent* event);
 
 public slots:
-    bool fileOpen(const QString& fileName = QString(), bool dontAddToRecentFiles = false);
+    bool fileOpen(const QString& fileName = QString(), bool dontAddToRecentFiles = false, bool readOnly = false);
     void logSql(const QString &sql, int msgtype);
     void dbState(bool dirty);
-    void browseRefresh();
+    void refresh();
     void jumpToRow(const QString& table, QString column, const QByteArray& value);
+    void switchToBrowseDataTab(QString tableToBrowse = QString());
+    void populateStructure();
 
 private slots:
     void createTreeContextMenu(const QPoint & qPoint);
     void changeTreeSelection();
     void fileNew();
-    void populateStructure();
-    void populateTable(const QString& tablename);
-    void resetBrowser();
+    void populateTable();
+    void clearTableBrowser();
     bool fileClose();
     void addRecord();
     void deleteRecord();
@@ -173,18 +192,21 @@ private slots:
     void createIndex();
     void compact();
     void deleteObject();
-    void editTable();
+    void editObject();
     void helpWhatsThis();
     void helpAbout();
-    void updateRecordText(int row, int col, bool type, const QByteArray& newtext);
-    void editWinAway();
+    void updateRecordText(const QPersistentModelIndex& idx, const QByteArray& text, bool isBlob);
+    void toggleEditDock(bool visible);
     void dataTableSelectionChanged(const QModelIndex& index);
     void doubleClickTable(const QModelIndex& index);
     void executeQuery();
     void importTableFromCSV();
     void exportTableToCSV();
+    void exportTableToJson();
     void fileSave();
     void fileRevert();
+    void on_actionOpen_Remote_triggered();
+    void on_actionSave_Remote_triggered();
     void exportDatabaseToSQL();
     void importDatabaseFromSQL();
     void openPreferences();
@@ -202,29 +224,25 @@ private slots:
     void loadExtension();
     void reloadSettings();
     void httpresponse(QNetworkReply* reply);
-    void updatePlot(SqliteTableModel* model, bool update = true);
-    void on_treePlotColumns_itemChanged(QTreeWidgetItem *item, int column);
-    void on_treePlotColumns_itemDoubleClicked(QTreeWidgetItem *item, int column);
-    void on_butSavePlot_clicked();
     void on_actionWiki_triggered();
     void on_actionBug_report_triggered();
+    void on_actionSqlCipherFaq_triggered();
     void on_actionWebsite_triggered();
     void updateBrowseDataColumnWidth(int section, int /*old_size*/, int new_size);
-    bool loadProject(QString filename = QString());
+    bool loadProject(QString filename = QString(), bool readOnly = false);
     void saveProject();
     void fileAttach();
     void updateFilter(int column, const QString& value);
     void editEncryption();
-    void switchToBrowseDataTab();
     void on_buttonClearFilters_clicked();
     void copyCurrentCreateStatement();
-    void on_comboLineType_currentIndexChanged(int index);
-    void on_comboPointShape_currentIndexChanged(int index);
     void showDataColumnPopupMenu(const QPoint& pos);
+    void showRecordPopupMenu(const QPoint& pos);
     void editDataColumnDisplayFormat();
     void showRowidColumn(bool show);
     void browseDataSetTableEncoding(bool forAllTables = false);
     void browseDataSetDefaultTableEncoding();
+    void fileOpenReadOnly();
 };
 
 #endif

@@ -2,10 +2,11 @@
 #define EXTENDEDTABLEWIDGET_H
 
 #include <QTableView>
-#include "FilterTableHeader.h"
 #include <QSet>
 #include <QDropEvent>
 #include <QDragMoveEvent>
+
+class FilterTableHeader;
 
 class ExtendedTableWidget : public QTableView
 {
@@ -21,11 +22,15 @@ public:
 
 signals:
     void foreignKeyClicked(const QString& table, const QString& column, const QByteArray& value);
+    void switchTable(bool next);    // 'next' parameter is set to true if next table should be selected and to false if previous table should be selected
 
 private:
     void copy();
     void paste();
     int numVisibleRows();
+
+    typedef QList<QByteArray> QByteArrayList;
+    QList<QByteArrayList> m_buffer;
 
 private slots:
     void vscrollbarChanged(int value);

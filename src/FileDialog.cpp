@@ -1,5 +1,5 @@
 #include "FileDialog.h"
-#include "PreferencesDialog.h"
+#include "Settings.h"
 
 QString FileDialog::getOpenFileName(QWidget* parent, const QString& caption, const QString &filter, QString *selectedFilter, Options options)
 {
@@ -9,9 +9,13 @@ QString FileDialog::getOpenFileName(QWidget* parent, const QString& caption, con
     return result;
 }
 
-QString FileDialog::getSaveFileName(QWidget* parent, const QString& caption, const QString& filter, QString* selectedFilter, Options options)
+QString FileDialog::getSaveFileName(QWidget* parent, const QString& caption, const QString& filter, const QString& defaultFileName, QString* selectedFilter, Options options)
 {
-    QString result = QFileDialog::getSaveFileName(parent, caption, getFileDialogPath(), filter, selectedFilter, options);
+    QString dir = getFileDialogPath();
+    if(!defaultFileName.isEmpty())
+        dir += "/" + defaultFileName;
+
+    QString result = QFileDialog::getSaveFileName(parent, caption, defaultFileName, filter, selectedFilter, options);
     if(!result.isEmpty())
         setFileDialogPath(result);
     return result;
@@ -27,13 +31,13 @@ QString FileDialog::getExistingDirectory(QWidget* parent, const QString& caption
 
 QString FileDialog::getFileDialogPath()
 {
-    switch(PreferencesDialog::getSettingsValue("db", "savedefaultlocation").toInt())
+    switch(Settings::getSettingsValue("db", "savedefaultlocation").toInt())
     {
     case 0:     // Remember last location
     case 2:     // Remember last location for current session only
-        return PreferencesDialog::getSettingsValue("db", "lastlocation").toString();
+        return Settings::getSettingsValue("db", "lastlocation").toString();
     case 1:     // Always use this locations
-        return PreferencesDialog::getSettingsValue("db", "defaultlocation").toString();
+        return Settings::getSettingsValue("db", "defaultlocation").toString();
     default:
         return "";
     }
@@ -43,13 +47,13 @@ void FileDialog::setFileDialogPath(const QString& new_path)
 {
     QString dir = QFileInfo(new_path).absolutePath();
 
-    switch(PreferencesDialog::getSettingsValue("db", "savedefaultlocation").toInt())
+    switch(Settings::getSettingsValue("db", "savedefaultlocation").toInt())
     {
     case 0:     // Remember last location
-        PreferencesDialog::setSettingsValue("db", "lastlocation", dir);
+        Settings::setSettingsValue("db", "lastlocation", dir);
         break;
     case 2:     // Remember last location for current session only
-        PreferencesDialog::setSettingsValue("db", "lastlocation", dir, true);
+        Settings::setSettingsValue("db", "lastlocation", dir, true);
         break;
     case 1:     // Always use this locations
         break;  // Do nothing

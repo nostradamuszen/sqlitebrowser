@@ -1,17 +1,16 @@
 #include "SqlExecutionArea.h"
 #include "ui_SqlExecutionArea.h"
 #include "sqltextedit.h"
-#include "ExtendedTableWidget.h"
 #include "sqlitetablemodel.h"
 #include "sqlitedb.h"
-#include "PreferencesDialog.h"
-#include "ExportCsvDialog.h"
+#include "Settings.h"
+#include "ExportDataDialog.h"
 
 #include <QMenu>
 #include <QInputDialog>
 #include <QMessageBox>
 
-SqlExecutionArea::SqlExecutionArea(QWidget* parent, DBBrowserDB* _db) :
+SqlExecutionArea::SqlExecutionArea(DBBrowserDB& _db, QWidget* parent) :
     QWidget(parent),
     db(_db),
     ui(new Ui::SqlExecutionArea)
@@ -20,7 +19,7 @@ SqlExecutionArea::SqlExecutionArea(QWidget* parent, DBBrowserDB* _db) :
     ui->setupUi(this);
 
     // Create model
-    model = new SqliteTableModel(this, db, PreferencesDialog::getSettingsValue("db", "prefetchsize").toInt());
+    model = new SqliteTableModel(db, this, Settings::getSettingsValue("db", "prefetchsize").toInt());
     ui->tableResult->setModel(model);
 
     // Create popup menu for save button
@@ -50,7 +49,7 @@ QString SqlExecutionArea::getSelectedSql() const
 
 void SqlExecutionArea::finishExecution(const QString& result)
 {
-    ui->editErrors->setText(result);
+    ui->editErrors->setPlainText(result);
 
     // Set column widths according to their contents but make sure they don't exceed a certain size
     ui->tableResult->resizeColumnsToContents();
@@ -66,6 +65,12 @@ SqlTextEdit *SqlExecutionArea::getEditor()
     return ui->editEditor;
 }
 
+ExtendedTableWidget *SqlExecutionArea::getTableResult()
+{
+    return ui->tableResult;
+}
+
+
 QTextEdit* SqlExecutionArea::getResultView()
 {
     return ui->editErrors;
@@ -78,7 +83,7 @@ void SqlExecutionArea::enableSaveButton(bool enable)
 
 void SqlExecutionArea::saveAsCsv()
 {
-    ExportCsvDialog dialog(db, this, model->query());
+    ExportDataDialog dialog(db, ExportDataDialog::ExportFormatCsv, this, model->query());
     dialog.exec();
 }
 
@@ -90,20 +95,18 @@ void SqlExecutionArea::saveAsView()
     {
         name = QInputDialog::getText(this, qApp->applicationName(), tr("Please specify the view name")).trimmed();
         if(name.isEmpty())
-            break;
-        if(!db->getObjectByName(name).getname().isEmpty())
+            return;
+        if(db.getObjectByName(name) != nullptr)
             QMessageBox::warning(this, qApp->applicationName(), tr("There is already an object with that name. Please choose a different name."));
         else
             break;
     }
-    if(name.isEmpty())
-        return;
 
     // Create the view
-    if(db->executeSQL(QString("CREATE VIEW %1 AS %2;").arg(sqlb::escapeIdentifier(name)).arg(model->query())))
+    if(db.executeSQL(QString("CREATE VIEW %1 AS %2;").arg(sqlb::escapeIdentifier(name)).arg(model->query())))
         QMessageBox::information(this, qApp->applicationName(), tr("View successfully created."));
     else
-        QMessageBox::warning(this, qApp->applicationName(), tr("Error creating view: %1").arg(db->lastErrorMessage));
+        QMessageBox::warning(this, qApp->applicationName(), tr("Error creating view: %1").arg(db.lastError()));
 }
 
 void SqlExecutionArea::reloadSettings()
@@ -112,13 +115,13 @@ void SqlExecutionArea::reloadSettings()
     ui->editEditor->reloadSettings();
 
     // Set font
-    QFont logfont(PreferencesDialog::getSettingsValue("editor", "font").toString());
+    QFont logfont(Settings::getSettingsValue("editor", "font").toString());
     logfont.setStyleHint(QFont::TypeWriter);
-    logfont.setPointSize(PreferencesDialog::getSettingsValue("log", "fontsize").toInt());
+    logfont.setPointSize(Settings::getSettingsValue("log", "fontsize").toInt());
     ui->editErrors->setFont(logfont);
 
     // Apply horizontal/vertical tiling option
-    if(PreferencesDialog::getSettingsValue("editor", "horizontal_tiling").toBool())
+    if(Settings::getSettingsValue("editor", "horizontal_tiling").toBool())
         ui->splitter->setOrientation(Qt::Horizontal);
     else
         ui->splitter->setOrientation(Qt::Vertical);

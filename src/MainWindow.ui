@@ -26,9 +26,24 @@
       </property>
       <widget class="QWidget" name="structure">
        <attribute name="title">
-        <string>Database &amp;Structure</string>
+        <string>Database Structure</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>4</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
         <item>
          <widget class="QToolBar" name="dbToolbar">
           <property name="windowTitle">
@@ -38,7 +53,8 @@
            <enum>Qt::ToolButtonTextBesideIcon</enum>
           </property>
           <addaction name="editCreateTableAction"/>
-          <addaction name="editModifyTableAction"/>
+          <addaction name="editCreateIndexAction"/>
+          <addaction name="editModifyObjectAction"/>
           <addaction name="editDeleteObjectAction"/>
          </widget>
         </item>
@@ -68,7 +84,7 @@
       </widget>
       <widget class="QWidget" name="browser">
        <attribute name="title">
-        <string>&amp;Browse Data</string>
+        <string>Browse Data</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
@@ -76,7 +92,7 @@
           <item>
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>Table:</string>
+             <string>&amp;Table:</string>
             </property>
             <property name="buddy">
              <cstring>comboBrowseTable</cstring>
@@ -103,6 +119,12 @@
             <property name="whatsThis">
              <string>Use this list to select a table to be displayed in the database view</string>
             </property>
+            <property name="maxVisibleItems">
+             <number>30</number>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QComboBox::AdjustToContents</enum>
+            </property>
            </widget>
           </item>
           <item>
@@ -119,9 +141,6 @@
             <property name="icon">
              <iconset resource="icons/icons.qrc">
               <normaloff>:/icons/refresh</normaloff>:/icons/refresh</iconset>
-            </property>
-            <property name="shortcut">
-             <string>F5</string>
             </property>
            </widget>
           </item>
@@ -197,6 +216,9 @@
           <property name="defaultDropAction">
            <enum>Qt::CopyAction</enum>
           </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::ContiguousSelection</enum>
+          </property>
           <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
            <bool>true</bool>
           </attribute>
@@ -218,6 +240,10 @@
             <property name="text">
              <string>|&lt;</string>
             </property>
+            <property name="icon">
+             <iconset resource="icons/icons.qrc">
+              <normaloff>:/icons/resultset_first.png</normaloff>:/icons/resultset_first.png</iconset>
+            </property>
            </widget>
           </item>
           <item>
@@ -233,6 +259,10 @@
             </property>
             <property name="text">
              <string>&lt;</string>
+            </property>
+            <property name="icon">
+             <iconset resource="icons/icons.qrc">
+              <normaloff>:/icons/resultset_previous.png</normaloff>:/icons/resultset_previous.png</iconset>
             </property>
            </widget>
           </item>
@@ -257,6 +287,10 @@
             <property name="text">
              <string>&gt;</string>
             </property>
+            <property name="icon">
+             <iconset resource="icons/icons.qrc">
+              <normaloff>:/icons/run</normaloff>:/icons/run</iconset>
+            </property>
            </widget>
           </item>
           <item>
@@ -272,6 +306,10 @@
             </property>
             <property name="text">
              <string>&gt;|</string>
+            </property>
+            <property name="icon">
+             <iconset resource="icons/icons.qrc">
+              <normaloff>:/icons/run_line</normaloff>:/icons/run_line</iconset>
             </property>
            </widget>
           </item>
@@ -320,7 +358,7 @@
       </widget>
       <widget class="QWidget" name="pragmas">
        <attribute name="title">
-        <string>Edit &amp;Pragmas</string>
+        <string>Edit Pragmas</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
@@ -333,7 +371,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>280</width>
+             <width>473</width>
              <height>558</height>
             </rect>
            </property>
@@ -723,7 +761,7 @@
             <item row="15" column="0">
              <widget class="QLabel" name="labelPragmaUserVersion">
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;http://www.sqlite.org/pragma.html#pragma_schema_version&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;User Version&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;http://www.sqlite.org/pragma.html#pragma_user_version&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;User Version&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="openExternalLinks">
                <bool>true</bool>
@@ -778,7 +816,7 @@
       </widget>
       <widget class="QWidget" name="query">
        <attribute name="title">
-        <string>E&amp;xecute SQL</string>
+        <string>Execute SQL</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
@@ -839,11 +877,22 @@
      </property>
      <addaction name="fileExportSQLAction"/>
      <addaction name="fileExportCSVAction"/>
+     <addaction name="fileExportJsonAction"/>
+    </widget>
+    <widget class="QMenu" name="menuRemote">
+     <property name="title">
+      <string>Remote</string>
+     </property>
+     <addaction name="actionOpen_Remote"/>
+     <addaction name="actionSave_Remote"/>
     </widget>
     <addaction name="fileNewAction"/>
     <addaction name="fileOpenAction"/>
+    <addaction name="fileOpenReadOnlyAction"/>
     <addaction name="fileAttachAction"/>
     <addaction name="fileCloseAction"/>
+    <addaction name="separator"/>
+    <addaction name="menuRemote"/>
     <addaction name="separator"/>
     <addaction name="fileSaveAction"/>
     <addaction name="fileRevertAction"/>
@@ -864,7 +913,7 @@
      <string>&amp;Edit</string>
     </property>
     <addaction name="editCreateTableAction"/>
-    <addaction name="editModifyTableAction"/>
+    <addaction name="editModifyObjectAction"/>
     <addaction name="editDeleteObjectAction"/>
     <addaction name="separator"/>
     <addaction name="editCreateIndexAction"/>
@@ -884,6 +933,7 @@
     <addaction name="helpWhatsThisAction"/>
     <addaction name="actionWebsite"/>
     <addaction name="actionWiki"/>
+    <addaction name="actionSqlCipherFaq"/>
     <addaction name="actionBug_report"/>
     <addaction name="helpAboutAction"/>
    </widget>
@@ -912,6 +962,15 @@
    <addaction name="fileSaveAction"/>
    <addaction name="fileRevertAction"/>
   </widget>
+  <widget class="QDockWidget" name="dockEdit">
+   <property name="windowTitle">
+    <string>Edit Database &amp;Cell</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_4"/>
+  </widget>
   <widget class="QDockWidget" name="dockLog">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
@@ -928,6 +987,12 @@
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
         <widget class="QLabel" name="labelLogSubmittedBy">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>30</height>
+          </size>
+         </property>
          <property name="text">
           <string>Show S&amp;QL submitted by</string>
          </property>
@@ -938,6 +1003,12 @@
        </item>
        <item>
         <widget class="QComboBox" name="comboLogSubmittedBy">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>30</height>
+          </size>
+         </property>
          <item>
           <property name="text">
            <string>User</string>
@@ -965,6 +1036,12 @@
        </item>
        <item>
         <widget class="QPushButton" name="buttonLogClear">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>30</height>
+          </size>
+         </property>
          <property name="text">
           <string>&amp;Clear</string>
          </property>
@@ -1015,250 +1092,7 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2">
-    <layout class="QVBoxLayout" name="verticalLayout_6">
-     <item>
-      <widget class="QSplitter" name="splitterForPlot">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <widget class="QTreeWidget" name="treePlotColumns">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>2</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="columnCount">
-         <number>4</number>
-        </property>
-        <attribute name="headerDefaultSectionSize">
-         <number>100</number>
-        </attribute>
-        <column>
-         <property name="text">
-          <string>Columns</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>X</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Y</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>_</string>
-         </property>
-        </column>
-       </widget>
-       <widget class="QCustomPlot" name="plotWidget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>8</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
-      </widget>
-     </item>
-     <item>
-      <widget class="QWidget" name="widget" native="true">
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Line type:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="comboLineType">
-          <property name="currentIndex">
-           <number>1</number>
-          </property>
-          <item>
-           <property name="text">
-            <string>None</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Line</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>StepLeft</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>StepRight</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>StepCenter</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Impulse</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>Point shape:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="comboPointShape">
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <item>
-           <property name="text">
-            <string>None</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Cross</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Plus</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Circle</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Disc</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Square</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Diamond</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Star</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Triangle</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>TriangleInverted</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>CrossSquare</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>PlusSquare</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>CrossCircle</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>PlusCircle</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Peace</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QPushButton" name="butSavePlot">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save current plot...&lt;/p&gt;&lt;p&gt;File format chosen by extension (png, jpg, pdf, bmp)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="statusTip">
-           <string>Save current plot...</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset resource="icons/icons.qrc">
-            <normaloff>:/icons/save_table</normaloff>:/icons/save_table</iconset>
-          </property>
-          <property name="checkable">
-           <bool>false</bool>
-          </property>
-          <property name="autoDefault">
-           <bool>false</bool>
-          </property>
-          <property name="default">
-           <bool>false</bool>
-          </property>
-          <property name="flat">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-    </layout>
+    <layout class="QVBoxLayout" name="verticalLayout_6"/>
    </widget>
   </widget>
   <widget class="QDockWidget" name="dockSchema">
@@ -1286,15 +1120,6 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockEditWindow">
-   <property name="windowTitle">
-    <string>Edit &amp;cell</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>8</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_4"/>
-  </widget>
   <action name="fileNewAction">
    <property name="icon">
     <iconset resource="icons/icons.qrc">
@@ -1314,6 +1139,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="fileOpenAction">
@@ -1336,6 +1164,9 @@
    <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="fileCloseAction">
    <property name="enabled">
@@ -1346,6 +1177,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+W</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="fileRevertAction">
@@ -1364,6 +1198,9 @@
    </property>
    <property name="whatsThis">
     <string>This option is used to revert the current database file to its last saved state. All changes made since the last save operation are lost.</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="fileSaveAction">
@@ -1386,6 +1223,9 @@
    <property name="shortcut">
     <string>Ctrl+S</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="fileCompactAction">
    <property name="enabled">
@@ -1402,6 +1242,9 @@
    </property>
    <property name="whatsThis">
     <string>Compact the database file, removing space wasted by deleted records.</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="fileExitAction">
@@ -1425,6 +1268,9 @@
    <property name="whatsThis">
     <string>This option lets you import data from an .sql dump text file into a new or existing database. SQL dump files can be created on most database engines, including MySQL and PostgreSQL.</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="fileImportCSVAction">
    <property name="text">
@@ -1435,6 +1281,9 @@
    </property>
    <property name="whatsThis">
     <string>Open a wizard that lets you import data from a comma separated text file into a database table. CSV files can be created on most database and spreadsheet applications.</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="fileExportSQLAction">
@@ -1447,6 +1296,9 @@
    <property name="whatsThis">
     <string>This option lets you export a database to a .sql dump text file. SQL dump files contain all data necessary to recreate the database on most database engines, including MySQL and PostgreSQL.</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="fileExportCSVAction">
    <property name="text">
@@ -1457,6 +1309,9 @@
    </property>
    <property name="whatsThis">
     <string>Export a database table as a comma separated text file, ready to be imported into other database or spreadsheet applications.</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="editCreateTableAction">
@@ -1472,6 +1327,9 @@
    </property>
    <property name="whatsThis">
     <string>Open the Create Table wizard, where it is possible to define the name and fields for a new table in the database</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="editDeleteObjectAction">
@@ -1491,8 +1349,11 @@
    <property name="whatsThis">
     <string>Open the Delete Table wizard, where you can select a database table to be dropped.</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
-  <action name="editModifyTableAction">
+  <action name="editModifyObjectAction">
    <property name="enabled">
     <bool>false</bool>
    </property>
@@ -1505,6 +1366,9 @@
    </property>
    <property name="whatsThis">
     <string>Open the Modify Table wizard, where it is possible to rename an existing table. It is also possible to add or delete fields form a table, as well as modify field names and types.</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="editCreateIndexAction">
@@ -1520,6 +1384,9 @@
    </property>
    <property name="whatsThis">
     <string>Open the Create Index wizard, where it is possible to define a new index on an existing database table.</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="viewPreferencesAction">
@@ -1544,11 +1411,21 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="icons/icons.qrc">
+     <normaloff>:/icons/log_dock</normaloff>:/icons/log_dock</iconset>
+   </property>
    <property name="text">
     <string>&amp;DB Toolbar</string>
    </property>
    <property name="whatsThis">
     <string>Shows or hides the Database toolbar.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="helpWhatsThisAction">
@@ -1561,6 +1438,9 @@
    </property>
    <property name="shortcut">
     <string>Shift+F1</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="helpAboutAction">
@@ -1597,10 +1477,7 @@
     <string>&amp;Execute SQL</string>
    </property>
    <property name="toolTip">
-    <string>Execute SQL [F5, Ctrl+Return]</string>
-   </property>
-   <property name="shortcut">
-    <string>F5</string>
+    <string>Execute SQL [F5, Ctrl+Return, Ctrl+R]</string>
    </property>
   </action>
   <action name="actionSqlOpenFile">
@@ -1632,6 +1509,9 @@
    <property name="text">
     <string>&amp;Load extension</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="actionSqlExecuteLine">
    <property name="icon">
@@ -1642,10 +1522,10 @@
     <string>Execute current line</string>
    </property>
    <property name="toolTip">
-    <string>Execute current line [Ctrl+E]</string>
+    <string>Execute current line [Shift+F5]</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+E</string>
+    <string>Shift+F5</string>
    </property>
   </action>
   <action name="actionExportCsvPopup">
@@ -1667,6 +1547,9 @@
    <property name="text">
     <string>&amp;Wiki...</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="actionBug_report">
    <property name="icon">
@@ -1676,6 +1559,9 @@
    <property name="text">
     <string>Bug &amp;report...</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="actionWebsite">
    <property name="icon">
@@ -1684,6 +1570,9 @@
    </property>
    <property name="text">
     <string>Web&amp;site...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="actionSaveProject">
@@ -1700,6 +1589,9 @@
    <property name="statusTip">
     <string>Save the current session to a file</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="actionOpenProject">
    <property name="icon">
@@ -1715,6 +1607,9 @@
    <property name="statusTip">
     <string>Load a working session from a file</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="fileAttachAction">
    <property name="enabled">
@@ -1722,6 +1617,9 @@
    </property>
    <property name="text">
     <string>&amp;Attach Database</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="actionEncryption">
@@ -1731,6 +1629,9 @@
    </property>
    <property name="text">
     <string>&amp;Set Encryption</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="actionSqlSaveFileAs">
@@ -1813,8 +1714,76 @@
     <string>Change the default encoding assumed for all tables in the database</string>
    </property>
   </action>
+  <action name="actionSqlCipherFaq">
+   <property name="icon">
+    <iconset resource="icons/icons.qrc">
+     <normaloff>:/icons/browser_open</normaloff>:/icons/browser_open</iconset>
+   </property>
+   <property name="text">
+    <string>SQLCipher &amp;FAQ...</string>
+   </property>
+   <property name="toolTip">
+    <string>Opens the SQLCipher FAQ in a browser window</string>
+   </property>
+  </action>
+  <action name="fileExportJsonAction">
+   <property name="text">
+    <string>Table(s) to JSON...</string>
+   </property>
+   <property name="toolTip">
+    <string>Export one or more table(s) to a JSON file</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionOpen_Remote">
+   <property name="text">
+    <string>Open from Remote</string>
+   </property>
+  </action>
+  <action name="actionSave_Remote">
+   <property name="text">
+    <string>Save to Remote</string>
+   </property>
+  </action>
+  <action name="actionRefresh">
+   <property name="text">
+    <string>Refresh</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
+  <action name="fileOpenReadOnlyAction">
+   <property name="icon">
+    <iconset resource="icons/icons.qrc">
+     <normaloff>:/icons/db_open</normaloff>:/icons/db_open</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Open Database Read Only...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open an existing database file in read only mode</string>
+   </property>
+   <property name="statusTip">
+    <string>Open an existing database file</string>
+   </property>
+   <property name="whatsThis">
+    <string>This option is used to open an existing database file.</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>SqlTextEdit</class>
+   <extends>QTextEdit</extends>
+   <header>sqltextedit.h</header>
+   <container>1</container>
+  </customwidget>
   <customwidget>
    <class>ExtendedTableWidget</class>
    <extends>QTableWidget</extends>
@@ -1823,28 +1792,23 @@
     <signal>foreignKeyClicked(QString,QString,QByteArray)</signal>
    </slots>
   </customwidget>
-  <customwidget>
-   <class>SqlTextEdit</class>
-   <extends>QTextEdit</extends>
-   <header>sqltextedit.h</header>
-  </customwidget>
-  <customwidget>
-   <class>QCustomPlot</class>
-   <extends>QWidget</extends>
-   <header>qcustomplot.h</header>
-   <container>1</container>
-  </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>mainTab</tabstop>
   <tabstop>dbTreeWidget</tabstop>
+  <tabstop>comboLogSubmittedBy</tabstop>
+  <tabstop>buttonLogClear</tabstop>
+  <tabstop>treeSchemaDock</tabstop>
   <tabstop>comboBrowseTable</tabstop>
   <tabstop>buttonRefresh</tabstop>
   <tabstop>buttonClearFilters</tabstop>
   <tabstop>buttonNewRecord</tabstop>
   <tabstop>buttonDeleteRecord</tabstop>
   <tabstop>dataTable</tabstop>
+  <tabstop>buttonBegin</tabstop>
   <tabstop>buttonPrevious</tabstop>
   <tabstop>buttonNext</tabstop>
+  <tabstop>buttonEnd</tabstop>
   <tabstop>buttonGoto</tabstop>
   <tabstop>editGoto</tabstop>
   <tabstop>scrollareaPragmas</tabstop>
@@ -1859,14 +1823,13 @@
   <tabstop>comboboxPragmaLockingMode</tabstop>
   <tabstop>spinPragmaMaxPageCount</tabstop>
   <tabstop>spinPragmaPageSize</tabstop>
-  <tabstop>checkboxPragmaRecursiveTriggers</tabstop>
   <tabstop>checkboxPragmaSecureDelete</tabstop>
+  <tabstop>checkboxPragmaRecursiveTriggers</tabstop>
   <tabstop>comboboxPragmaSynchronous</tabstop>
   <tabstop>comboboxPragmaTempStore</tabstop>
   <tabstop>spinPragmaUserVersion</tabstop>
   <tabstop>spinPragmaWalAutoCheckpoint</tabstop>
-  <tabstop>comboLogSubmittedBy</tabstop>
-  <tabstop>buttonLogClear</tabstop>
+  <tabstop>tabSqlAreas</tabstop>
  </tabstops>
  <resources>
   <include location="icons/icons.qrc"/>
@@ -1940,7 +1903,7 @@
    <sender>comboBrowseTable</sender>
    <signal>activated(QString)</signal>
    <receiver>MainWindow</receiver>
-   <slot>populateTable(QString)</slot>
+   <slot>populateTable()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>118</x>
@@ -1959,8 +1922,8 @@
    <slot>addRecord()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>443</x>
-     <y>141</y>
+     <x>402</x>
+     <y>143</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
@@ -1975,8 +1938,8 @@
    <slot>deleteRecord()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>565</x>
-     <y>141</y>
+     <x>506</x>
+     <y>143</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
@@ -1991,8 +1954,8 @@
    <slot>navigatePrevious()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>74</x>
-     <y>585</y>
+     <x>86</x>
+     <y>539</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
@@ -2007,8 +1970,8 @@
    <slot>navigateNext()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>168</x>
-     <y>585</y>
+     <x>183</x>
+     <y>539</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
@@ -2023,8 +1986,8 @@
    <slot>navigateGoto()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>413</x>
-     <y>586</y>
+     <x>365</x>
+     <y>539</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
@@ -2039,8 +2002,8 @@
    <slot>navigateGoto()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>565</x>
-     <y>586</y>
+     <x>506</x>
+     <y>538</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
@@ -2052,7 +2015,7 @@
    <sender>buttonRefresh</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
-   <slot>browseRefresh()</slot>
+   <slot>refresh()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>245</x>
@@ -2225,10 +2188,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>editModifyTableAction</sender>
+   <sender>editModifyObjectAction</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>editTable()</slot>
+   <slot>editObject()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -2295,8 +2258,8 @@
    <slot>createTreeContextMenu(QPoint)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>101</x>
-     <y>125</y>
+     <x>111</x>
+     <y>261</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
@@ -2343,8 +2306,8 @@
    <slot>loadPragmas()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>101</x>
-     <y>125</y>
+     <x>111</x>
+     <y>540</y>
     </hint>
     <hint type="destinationlabel">
      <x>-1</x>
@@ -2359,8 +2322,8 @@
    <slot>savePragmas()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>101</x>
-     <y>125</y>
+     <x>111</x>
+     <y>540</y>
     </hint>
     <hint type="destinationlabel">
      <x>802</x>
@@ -2379,8 +2342,8 @@
      <y>126</y>
     </hint>
     <hint type="destinationlabel">
-     <x>691</x>
-     <y>163</y>
+     <x>632</x>
+     <y>173</y>
     </hint>
    </hints>
   </connection>
@@ -2395,8 +2358,8 @@
      <y>126</y>
     </hint>
     <hint type="destinationlabel">
-     <x>990</x>
-     <y>240</y>
+     <x>1028</x>
+     <y>230</y>
     </hint>
    </hints>
   </connection>
@@ -2407,12 +2370,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>872</x>
-     <y>126</y>
+     <x>772</x>
+     <y>135</y>
     </hint>
     <hint type="destinationlabel">
-     <x>987</x>
-     <y>240</y>
+     <x>1028</x>
+     <y>230</y>
     </hint>
    </hints>
   </connection>
@@ -2439,8 +2402,8 @@
    <slot>closeSqlTab(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>81</x>
-     <y>125</y>
+     <x>91</x>
+     <y>259</y>
     </hint>
     <hint type="destinationlabel">
      <x>-1</x>
@@ -2663,8 +2626,8 @@
    <slot>navigateEnd()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>189</x>
-     <y>573</y>
+     <x>223</x>
+     <y>539</y>
     </hint>
     <hint type="destinationlabel">
      <x>499</x>
@@ -2679,8 +2642,8 @@
    <slot>navigateBegin()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>69</x>
-     <y>140</y>
+     <x>50</x>
+     <y>539</y>
     </hint>
     <hint type="destinationlabel">
      <x>499</x>
@@ -2727,8 +2690,8 @@
    <slot>jumpToRow(QString,QString,QByteArray)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>60</x>
-     <y>105</y>
+     <x>70</x>
+     <y>242</y>
     </hint>
     <hint type="destinationlabel">
      <x>518</x>
@@ -2800,11 +2763,59 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>fileExportJsonAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>exportTableToJson()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>518</x>
+     <y>314</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionRefresh</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>refresh()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>518</x>
+     <y>314</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fileOpenReadOnlyAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>fileOpenReadOnly()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>518</x>
+     <y>314</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>fileOpen()</slot>
   <slot>fileClose()</slot>
-  <slot>populateTable(QString)</slot>
+  <slot>populateTable()</slot>
   <slot>addRecord()</slot>
   <slot>deleteRecord()</slot>
   <slot>navigatePrevious()</slot>
@@ -2813,7 +2824,7 @@
   <slot>navigateEnd()</slot>
   <slot>navigateGoto()</slot>
   <slot>browseFind(bool)</slot>
-  <slot>browseRefresh()</slot>
+  <slot>refresh()</slot>
   <slot>compact()</slot>
   <slot>helpWhatsThis()</slot>
   <slot>doubleClickTable(QModelIndex)</slot>
@@ -2828,7 +2839,7 @@
   <slot>createIndex()</slot>
   <slot>createTable()</slot>
   <slot>deleteObject()</slot>
-  <slot>editTable()</slot>
+  <slot>editObject()</slot>
   <slot>editTablePopup()</slot>
   <slot>addField()</slot>
   <slot>editField()</slot>
@@ -2860,5 +2871,8 @@
   <slot>showRowidColumn(bool)</slot>
   <slot>browseDataSetTableEncoding()</slot>
   <slot>browseDataSetDefaultTableEncoding()</slot>
+  <slot>browseDataFetchAllData()</slot>
+  <slot>exportTableToJson()</slot>
+  <slot>fileOpenReadOnly()</slot>
  </slots>
 </ui>

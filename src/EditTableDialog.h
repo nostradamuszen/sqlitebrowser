@@ -7,6 +7,7 @@
 
 class DBBrowserDB;
 class QTreeWidgetItem;
+class ForeignKeyEditorDelegate;
 
 namespace Ui {
 class EditTableDialog;
@@ -17,7 +18,7 @@ class EditTableDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit EditTableDialog(DBBrowserDB* pdb, const QString& tableName, bool createTable, QWidget* parent = 0);
+    explicit EditTableDialog(DBBrowserDB& pdb, const QString& tableName, bool createTable, QWidget* parent = 0);
     ~EditTableDialog();
 
 protected:
@@ -41,26 +42,25 @@ private:
 
     void moveCurrentField(bool down);
 
-    // Returns true if there already is a field of that name
-    bool fieldNameExists(const QString& name);
-
 private slots:
-    virtual void populateFields();
-    virtual void addField();
-    virtual void removeField();
-    virtual void fieldSelectionChanged();
+    void populateFields();
+    void addField();
+    void removeField();
+    void fieldSelectionChanged();
     virtual void accept();
     virtual void reject();
-    virtual void checkInput();
-    virtual void itemChanged(QTreeWidgetItem* item, int column);
-    virtual void updateTypes();
-    virtual void moveUp();
-    virtual void moveDown();
-    virtual void setWithoutRowid(bool without_rowid);
+    void checkInput();
+    void itemChanged(QTreeWidgetItem* item, int column);
+    void updateTypes();
+    void moveUp();
+    void moveDown();
+    void setWithoutRowid(bool without_rowid);
+    void setTemporary(bool is_temp);
 
 private:
     Ui::EditTableDialog* ui;
-    DBBrowserDB* pdb;
+    DBBrowserDB& pdb;
+    ForeignKeyEditorDelegate* m_fkEditorDelegate;
     QString curTable;
     sqlb::Table m_table;
     QStringList types;

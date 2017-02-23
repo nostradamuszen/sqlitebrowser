@@ -1,16 +1,16 @@
 #include "DbStructureModel.h"
 #include "sqlitedb.h"
 #include "sqlitetablemodel.h"
-#include "PreferencesDialog.h"
+#include "Settings.h"
 
 #include <QTreeWidgetItem>
 #include <QMimeData>
 #include <QMessageBox>
 #include <QApplication>
 
-DbStructureModel::DbStructureModel(QObject* parent)
+DbStructureModel::DbStructureModel(DBBrowserDB& db, QObject* parent)
     : QAbstractItemModel(parent),
-      m_db(0)
+      m_db(db)
 {
     // Create root item and use its columns to store the header strings
     QStringList header;
@@ -37,14 +37,18 @@ QVariant DbStructureModel::data(const QModelIndex& index, int role) const
     QTreeWidgetItem* item = static_cast<QTreeWidgetItem*>(index.internalPointer());
 
     // Depending on the role either return the text or the icon
-    if(role == Qt::DisplayRole)
-        return PreferencesDialog::getSettingsValue("db", "hideschemalinebreaks").toBool() ? item->text(index.column()).replace("\n", " ").simplified() : item->text(index.column());
-    else if(role == Qt::ToolTipRole)
-        return item->text(index.column());  // Don't modify the text when it's supposed to be shown in a tooltip
-    else if(role == Qt::DecorationRole)
+    switch(role)
+    {
+    case Qt::DisplayRole:
+        return Settings::getSettingsValue("db", "hideschemalinebreaks").toBool() ? item->text(index.column()).replace("\n", " ").simplified() : item->text(index.column());
+    case Qt::EditRole:
+    case Qt::ToolTipRole:   // Don't modify the text when it's supposed to be shown in a tooltip
+        return item->text(index.column());
+    case Qt::DecorationRole:
         return item->icon(index.column());
-    else
+    default:
         return QVariant();
+    }
 }
 
 Qt::ItemFlags DbStructureModel::flags(const QModelIndex &index) const
@@ -115,72 +119,91 @@ int DbStructureModel::rowCount(const QModelIndex& parent) const
         return static_cast<QTreeWidgetItem*>(parent.internalPointer())->childCount();
 }
 
-void DbStructureModel::reloadData(DBBrowserDB* db)
+void DbStructureModel::reloadData()
 {
-    // Save pointer to DB object
-    m_db = db;
-
     beginResetModel();
 
     // Remove all data except for the root item
     while(rootItem->childCount())
-    {
         delete rootItem->child(0);
-        rootItem->removeChild(rootItem->child(0));
-    }
 
     // Return here if no DB is opened
-    if(!db->isOpen())
+    if(!m_db.isOpen())
     {
         endResetModel();
         return;
     }
 
-    // Create the nodes for tables, indices, views and triggers
+    // Create the nodes for browsables and for tables, indices, views and triggers. The idea here is to basically have two trees in one model:
+    // In the root node there are two nodes: 'browsables' and 'all'. The first node contains a list of a all browsable objects, i.e. views and tables.
+    // The seconds node contains four sub-nodes (tables, indices, views and triggers), each containing a list of objects of that type.
+    // This way we only have to have and only have to update one model and can use it in all sorts of places, just by setting a different root node.
     QMap<QString, QTreeWidgetItem*> typeToParentItem;
-    QTreeWidgetItem* itemTables = new QTreeWidgetItem(rootItem);
+
+    QTreeWidgetItem* itemBrowsables = new QTreeWidgetItem(rootItem);
+    itemBrowsables->setIcon(0, QIcon(QString(":/icons/view")));
+    itemBrowsables->setText(0, tr("Browsables (%1)").arg(m_db.objMap.values("table").count() + m_db.objMap.values("view").count()));
+    typeToParentItem.insert("browsable", itemBrowsables);
+
+    QTreeWidgetItem* itemAll = new QTreeWidgetItem(rootItem);
+    itemAll->setIcon(0, QIcon(QString(":/icons/view")));
+    itemAll->setText(0, tr("All"));
+
+    QTreeWidgetItem* itemTables = new QTreeWidgetItem(itemAll);
     itemTables->setIcon(0, QIcon(QString(":/icons/table")));
-    itemTables->setText(0, tr("Tables (%1)").arg(db->objMap.values("table").count()));
+    itemTables->setText(0, tr("Tables (%1)").arg(m_db.objMap.values("table").count()));
     typeToParentItem.insert("table", itemTables);
-    QTreeWidgetItem* itemIndices = new QTreeWidgetItem(rootItem);
+
+    QTreeWidgetItem* itemIndices = new QTreeWidgetItem(itemAll);
     itemIndices->setIcon(0, QIcon(QString(":/icons/index")));
-    itemIndices->setText(0, tr("Indices (%1)").arg(db->objMap.values("index").count()));
+    itemIndices->setText(0, tr("Indices (%1)").arg(m_db.objMap.values("index").count()));
     typeToParentItem.insert("index", itemIndices);
-    QTreeWidgetItem* itemViews = new QTreeWidgetItem(rootItem);
+
+    QTreeWidgetItem* itemViews = new QTreeWidgetItem(itemAll);
     itemViews->setIcon(0, QIcon(QString(":/icons/view")));
-    itemViews->setText(0, tr("Views (%1)").arg(db->objMap.values("view").count()));
+    itemViews->setText(0, tr("Views (%1)").arg(m_db.objMap.values("view").count()));
     typeToParentItem.insert("view", itemViews);
-    QTreeWidgetItem* itemTriggers = new QTreeWidgetItem(rootItem);
+
+    QTreeWidgetItem* itemTriggers = new QTreeWidgetItem(itemAll);
     itemTriggers->setIcon(0, QIcon(QString(":/icons/trigger")));
-    itemTriggers->setText(0, tr("Triggers (%1)").arg(db->objMap.values("trigger").count()));
+    itemTriggers->setText(0, tr("Triggers (%1)").arg(m_db.objMap.values("trigger").count()));
     typeToParentItem.insert("trigger", itemTriggers);
 
     // Get all database objects and sort them by their name
-    QMultiMap<QString, DBBrowserObject> dbobjs;
-    for(objectMap::ConstIterator it=db->objMap.begin(); it != db->objMap.end(); ++it)
-        dbobjs.insert((*it).getname(), (*it));
+    QMultiMap<QString, sqlb::ObjectPtr> dbobjs;
+    for(auto it=m_db.objMap.constBegin(); it != m_db.objMap.constEnd(); ++it)
+        dbobjs.insert((*it)->name(), (*it));
 
     // Add the actual table objects
-    for(QMultiMap<QString, DBBrowserObject>::ConstIterator it=dbobjs.begin(); it != dbobjs.end(); ++it)
+    for(auto it=dbobjs.constBegin();it!=dbobjs.constEnd();++it)
     {
         // Object node
-        QTreeWidgetItem *tableItem = new QTreeWidgetItem(typeToParentItem.value((*it).gettype()));
-        tableItem->setIcon(0, QIcon(QString(":/icons/%1").arg((*it).gettype())));
-        tableItem->setText(0, (*it).getname());
-        tableItem->setText(1, (*it).gettype());
-        tableItem->setText(3, (*it).getsql());
+        QTreeWidgetItem* item = addNode(typeToParentItem.value(sqlb::Object::typeToString((*it)->type())), *it);
 
-        // If it is a table or view add the field Nodes
-        if((*it).gettype() == "table" || (*it).gettype() == "view")
+        // If it is a table or view add the field nodes, add an extra node for the browsable section
+        if((*it)->type() == sqlb::Object::Types::Table || (*it)->type() == sqlb::Object::Types::View)
+            addNode(typeToParentItem.value("browsable"), *it);
+
+        // Add field nodes if there are any
+        sqlb::FieldInfoList fieldList = (*it)->fieldInformation();
+        if(!fieldList.empty())
         {
-            for(int i=0; i < (*it).table.fields().size(); ++i)
+            QStringList pk_columns;
+            if((*it)->type() == sqlb::Object::Types::Table)
             {
-                QTreeWidgetItem *fldItem = new QTreeWidgetItem(tableItem);
-                fldItem->setText(0, (*it).table.fields().at(i)->name());
+                sqlb::FieldVector pk = (*it).dynamicCast<sqlb::Table>()->primaryKey();
+                foreach(sqlb::FieldPtr pk_col, pk)
+                    pk_columns.push_back(pk_col->name());
+
+            }
+            foreach(const sqlb::FieldInfo& field, fieldList)
+            {
+                QTreeWidgetItem *fldItem = new QTreeWidgetItem(item);
+                fldItem->setText(0, field.name);
                 fldItem->setText(1, "field");
-                fldItem->setText(2, (*it).table.fields().at(i)->type());
-                fldItem->setText(3, (*it).table.fields().at(i)->toString("  ", " "));
-                if((*it).table.fields().at(i)->primaryKey())
+                fldItem->setText(2, field.type);
+                fldItem->setText(3, field.sql);
+                if(pk_columns.contains(field.name))
                     fldItem->setIcon(0, QIcon(":/icons/field_key"));
                 else
                     fldItem->setIcon(0, QIcon(":/icons/field"));
@@ -214,7 +237,7 @@ QMimeData* DbStructureModel::mimeData(const QModelIndexList& indices) const
             // If it is a table also add the content
             if(data(index.sibling(index.row(), 1), Qt::DisplayRole).toString() == "table")
             {
-                SqliteTableModel tableModel(0, m_db);
+                SqliteTableModel tableModel(m_db);
                 tableModel.setTable(data(index.sibling(index.row(), 0), Qt::DisplayRole).toString());
                 for(int i=0; i < tableModel.rowCount(); ++i)
                 {
@@ -231,7 +254,7 @@ QMimeData* DbStructureModel::mimeData(const QModelIndexList& indices) const
 
     // Create the MIME data object
     QMimeData* mime = new QMimeData();
-    mime->setProperty("db_file", m_db->curDBFilename);      // Also save the file name to avoid dropping an object on the same database as it comes from
+    mime->setProperty("db_file", m_db.currentFile());      // Also save the file name to avoid dropping an object on the same database as it comes from
     mime->setData("text/plain", d);
     return mime;
 }
@@ -244,20 +267,33 @@ bool DbStructureModel::dropMimeData(const QMimeData* data, Qt::DropAction action
     if(!data->hasFormat("text/plain"))
         return false;
 
-    if(data->property("db_file") == m_db->curDBFilename)
+    if(data->property("db_file") == m_db.currentFile())
         return false;
 
     // Get data
     QByteArray d = data->data("text/plain");
 
     // Try to execute the SQL statement
-    if(m_db->executeMultiSQL(d, true, true))
+    if(m_db.executeMultiSQL(d, true, true))
     {
-        m_db->updateSchema();
-        reloadData(m_db);
+        m_db.updateSchema();
+        reloadData();
         return true;
     } else {
-        QMessageBox::warning(0, QApplication::applicationName(), m_db->lastErrorMessage);
+        QMessageBox::warning(0, QApplication::applicationName(), m_db.lastError());
         return false;
     }
+}
+
+QTreeWidgetItem* DbStructureModel::addNode(QTreeWidgetItem* parent, const sqlb::ObjectPtr& object)
+{
+    QString type = sqlb::Object::typeToString(object->type());
+
+    QTreeWidgetItem *item = new QTreeWidgetItem(parent);
+    item->setIcon(0, QIcon(QString(":/icons/%1").arg(type)));
+    item->setText(0, object->name());
+    item->setText(1, type);
+    item->setText(3, object->originalSql());
+
+    return item;
 }

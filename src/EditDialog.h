@@ -2,6 +2,7 @@
 #define EDITDIALOG_H
 
 #include <QDialog>
+#include <QPersistentModelIndex>
 
 class QHexEdit;
 
@@ -14,44 +15,63 @@ class EditDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit EditDialog(QWidget* parent = 0, bool forUseInDockWidget = false);
+    explicit EditDialog(QWidget* parent = 0);
     ~EditDialog();
 
-    int getCurrentCol() { return curCol; }
-    int getCurrentRow() { return curRow; }
+    void setCurrentIndex(const QModelIndex& idx);
 
 public slots:
-    virtual void reset();
-    virtual void loadText(const QByteArray& data, int row, int col);
     virtual void setFocus();
     virtual void reject();
-    virtual void allowEditing(bool on);
+    void setReadOnly(bool ro);
+    void reloadSettings();
 
 protected:
-    virtual void closeEvent(QCloseEvent* ev);
     virtual void showEvent(QShowEvent* ev);
 
 private slots:
-    virtual void importData();
-    virtual void exportData();
-    virtual void clearData();
+    void importData();
+    void exportData();
+    void setNull();
+    void updateApplyButton();
     virtual void accept();
-    virtual void editTextChanged();
-    virtual void hexDataChanged();
-    virtual void checkDataType();
-    virtual void toggleOverwriteMode();
+    int checkDataType(const QByteArray& data);
+    void loadData(const QByteArray& data);
+    void toggleOverwriteMode();
+    void editModeChanged(int newMode);
+    void editTextChanged();
+    void updateCellInfo(const QByteArray& data);
+    QString humanReadableSize(double byteCount);
 
 signals:
-    void goingAway();
-    void updateRecordText(int row, int col, bool isBlob, const QByteArray& data);
+    void recordTextUpdated(const QPersistentModelIndex& idx, const QByteArray& data, bool isBlob);
 
 private:
     Ui::EditDialog* ui;
-    bool useInDock;
     QHexEdit* hexEdit;
-    QByteArray oldData;
-    int curCol;
-    int curRow;
+    QPersistentModelIndex currentIndex;
+    int dataSource;
+    int dataType;
+    bool textNullSet;
+    bool isReadOnly;
+
+    enum DataSources {
+        TextBuffer,
+        HexBuffer
+    };
+
+    enum DataTypes {
+        Binary,
+        Image,
+        Null,
+        Text
+    };
+
+    enum EditModes {
+        TextEditor = 0,
+        HexEditor = 1,
+        ImageViewer = 2
+    };
 };
 
 #endif

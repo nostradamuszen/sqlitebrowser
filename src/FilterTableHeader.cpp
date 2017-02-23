@@ -1,6 +1,7 @@
 #include "FilterTableHeader.h"
 #include "FilterLineEdit.h"
 
+#include <QApplication>
 #include <QTableView>
 #include <QScrollBar>
 
@@ -8,12 +9,7 @@ FilterTableHeader::FilterTableHeader(QTableView* parent) :
     QHeaderView(Qt::Horizontal, parent)
 {
     // Activate the click signals to allow sorting
-#if QT_VERSION >= 0x050000
     setSectionsClickable(true);
-#else
-    setClickable(true);
-#endif
-
     setSortIndicatorShown(true);
 
     // Do some connects: Basically just resize and reposition the input widgets whenever anything changes
@@ -28,8 +24,7 @@ FilterTableHeader::FilterTableHeader(QTableView* parent) :
 void FilterTableHeader::generateFilters(int number, bool showFirst)
 {
     // Delete all the current filter widgets
-    for(int i=0;i < filterWidgets.size(); ++i)
-        delete filterWidgets.at(i);
+    qDeleteAll(filterWidgets);
     filterWidgets.clear();
 
     // And generate a bunch of new ones
@@ -77,8 +72,11 @@ void FilterTableHeader::adjustPositions()
     {
         // Get the current widget, move it and resize it
         QWidget* w = filterWidgets.at(i);
-        w->move(sectionPosition(i) - offset(), filterWidgets.at(i)->sizeHint().height() + 2);   // The two adds some extra space between the header label and the input widget
-        w->resize(sectionSize(i), filterWidgets.at(i)->sizeHint().height());
+        if (QApplication::layoutDirection() == Qt::RightToLeft)
+            w->move(width() - (sectionPosition(i) + sectionSize(i) - offset()), w->sizeHint().height() + 2);   // The two adds some extra space between the header label and the input widget
+        else
+            w->move(sectionPosition(i) - offset(), w->sizeHint().height() + 2);   // The two adds some extra space between the header label and the input widget
+        w->resize(sectionSize(i), w->sizeHint().height());
     }
 }
 

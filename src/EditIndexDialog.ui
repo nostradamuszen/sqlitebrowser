@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>CreateIndexDialog</class>
- <widget class="QDialog" name="CreateIndexDialog">
+ <class>EditIndexDialog</class>
+ <widget class="QDialog" name="EditIndexDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>610</width>
-    <height>342</height>
+    <height>504</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Create New Index</string>
+   <string>Edit Index Schema</string>
   </property>
   <property name="windowIcon">
    <iconset resource="icons/icons.qrc">
@@ -20,6 +20,12 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QFormLayout" name="formLayout">
+     <property name="fieldGrowthPolicy">
+      <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+     </property>
+     <property name="formAlignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+     </property>
      <item row="0" column="0">
       <widget class="QLabel" name="labelIndexName">
        <property name="text">
@@ -32,56 +38,6 @@
      </item>
      <item row="0" column="1">
       <widget class="QLineEdit" name="editIndexName"/>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="labelIndexColumns">
-       <property name="text">
-        <string>&amp;Columns</string>
-       </property>
-       <property name="buddy">
-        <cstring>tableIndexColumns</cstring>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QTableWidget" name="tableIndexColumns">
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>250</height>
-        </size>
-       </property>
-       <property name="editTriggers">
-        <set>QAbstractItemView::NoEditTriggers</set>
-       </property>
-       <property name="showDropIndicator" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alternatingRowColors">
-        <bool>true</bool>
-       </property>
-       <property name="selectionMode">
-        <enum>QAbstractItemView::NoSelection</enum>
-       </property>
-       <attribute name="verticalHeaderVisible">
-        <bool>false</bool>
-       </attribute>
-       <column>
-        <property name="text">
-         <string>Column</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Use in Index</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Order</string>
-        </property>
-       </column>
-      </widget>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="labelTableName">
@@ -113,6 +69,78 @@
        </property>
       </widget>
      </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="labelIndexColumns">
+       <property name="text">
+        <string>&amp;Columns</string>
+       </property>
+       <property name="buddy">
+        <cstring>tableIndexColumns</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QSplitter" name="splitter">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <widget class="QTableWidget" name="tableIndexColumns">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+          <horstretch>0</horstretch>
+          <verstretch>1</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>250</height>
+         </size>
+        </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="showDropIndicator" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::NoSelection</enum>
+        </property>
+        <attribute name="verticalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
+        <column>
+         <property name="text">
+          <string>Column</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Use in Index</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Order</string>
+         </property>
+        </column>
+       </widget>
+       <widget class="SqlTextEdit" name="sqlTextEdit">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -127,6 +155,14 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>SqlTextEdit</class>
+   <extends>QWidget</extends>
+   <header>sqltextedit.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>editIndexName</tabstop>
   <tabstop>comboTableName</tabstop>
@@ -141,7 +177,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>CreateIndexDialog</receiver>
+   <receiver>EditIndexDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -157,7 +193,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>CreateIndexDialog</receiver>
+   <receiver>EditIndexDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -173,7 +209,7 @@
   <connection>
    <sender>comboTableName</sender>
    <signal>currentIndexChanged(QString)</signal>
-   <receiver>CreateIndexDialog</receiver>
+   <receiver>EditIndexDialog</receiver>
    <slot>tableChanged(QString)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -189,7 +225,7 @@
   <connection>
    <sender>editIndexName</sender>
    <signal>textChanged(QString)</signal>
-   <receiver>CreateIndexDialog</receiver>
+   <receiver>EditIndexDialog</receiver>
    <slot>checkInput()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -205,7 +241,7 @@
   <connection>
    <sender>tableIndexColumns</sender>
    <signal>cellChanged(int,int)</signal>
-   <receiver>CreateIndexDialog</receiver>
+   <receiver>EditIndexDialog</receiver>
    <slot>checkInput()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -215,6 +251,22 @@
     <hint type="destinationlabel">
      <x>566</x>
      <y>40</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkIndexUnique</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>EditIndexDialog</receiver>
+   <slot>checkInput()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>332</x>
+     <y>90</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>304</x>
+     <y>251</y>
     </hint>
    </hints>
   </connection>

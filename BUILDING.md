@@ -1,10 +1,20 @@
 ## BUILD INSTRUCTIONS AND REQUIREMENTS
 
+DB Browser for SQLite requires Qt as well as SQLite. For more information on Qt
+please consult http://www.qt.io and for SQLite please see https://sqlite.org/.
+
+Please note that all versions after 3.9.1 will require:
+* Qt 5.6 or later
+* A C++ compiler with support for C++11 or later
+
+Without these or with older versions you won't be able to compile DB Browser for
+Sqlite anymore. This applies to all platforms. However, most likely you won't
+have to worry about these as most systems meet these requirements today.
+
 ### Generic Linux and FreeBSD
 
-DB Browser for SQLite requires Trolltech's Qt, version 4.6 or newer. For more
-information on Qt please consult http://www.qt.io. The GPL version of
-Qt is available in almost all Linux distributions as a default package.
+The GPL version of Qt is available in almost all Linux distributions as a
+default package.
 
 The only requirements for building this code are the presence of Qt and
 sqlite3. Qt can be included as a static or shared library, depending on the
@@ -30,15 +40,13 @@ The same process works for building the code in any platform supported by Qt
 
 ### Ubuntu Linux
 
-**1**. Make sure the `build-essential`, `cmake`, `libqt4-dev` and `libsqlite3-dev`
-       packages are installed.<br />
-**2**. Download the DB Browser for SQLite source code.<br />
-**3**. Open a terminal in the source code directory.<br />
-**4**. Run these commands:<br />
 ```bash
+$ sudo apt install build-essential git cmake libsqlite3-dev qt5-default qttools5-dev-tools
+$ git clone https://github.com/sqlitebrowser/sqlitebrowser.git
+$ cd sqlitebrowser
 $ mkdir build
 $ cd build
-$ cmake ..
+$ cmake -Wno-dev ..
 $ make
 $ sudo make install
 ```
@@ -49,10 +57,14 @@ Done. :)
 
 ### CentOS / Fedora Linux
 
-**1**. Make sure the `qt-devel`, `ant-antlr`, and `antlr-C++` packages are installed.<br />
+**1**. Make sure the `cmake`, `qt-devel`, `ant-antlr`, `sqlite-devel`, `antlr-C++`,
+and `gcc-c++` packages are installed.<br />
 ```
-$ sudo yum install qt-devel ant-antlr antlr-C++
+$ sudo dnf install cmake qt-devel ant-antlr sqlite-devel antlr-C++ gcc-c++
 ```
+
+**Note** - If on CentOS or an older version of Fedora, you may need to use `yum` instead of `dnf`
+
 **2**. Download the DB Browser for SQLite source code.<br />
 **3**. Open a terminal in the source code directory.<br />
 **4**. Run these commands:<br />
@@ -82,7 +94,7 @@ Building an .app bundle version takes a bit more effort, but isn't too hard.
 It requires SQLite and Qt 4.x/5.x to be installed first.  These are the
 [Homebrew](http://brew.sh) steps, though other package managers should work:
 
-    $ brew install sqlite --with-functions --without-readline
+    $ brew install sqlite --with-functions --with-json1 --without-readline
     $ brew install qt
     $ brew link sqlite3 --force
 
@@ -99,9 +111,9 @@ And compiling it:
     $ qmake
     $ make
     $ brew unlink sqlite3
-    $ mv src/sqlitebrowser.app /Applications/
+    $ mv src/DB\ Browser\ for\ SQLite.app /Applications/
 
-An icon for "sqlitebrowser" should now be in your main OSX Applications
+An icon for "DB Browser for SQLite" should now be in your main OSX Applications
 list, ready to launch.
 
 **Note 2** - There have been occasional [reports of compilation problems on OSX
@@ -116,6 +128,13 @@ or:
     $ qmake -spec macx-llvm
 
 (before the 'make' step)
+
+### Compiling on Windows with MSVC
+
+Complete setup, build, and packaging instructions with MSVC 2013 x64 are online
+here:
+
+&nbsp; &nbsp; https://github.com/sqlitebrowser/sqlitebrowser/wiki/Setting-up-a-Win64-development-environment-for-DB4S
 
 ### Cross compiling for Windows
 

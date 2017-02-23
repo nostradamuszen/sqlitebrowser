@@ -184,11 +184,11 @@ void ImportCsvDialog::accept()
     // Are we importing into an existing table?
     bool importToExistingTable = false;
     objectMap objects = pdb->getBrowsableObjects();
-    for(objectMap::ConstIterator i=objects.begin();i!=objects.end();++i)
+    for(auto it=objects.constBegin();it!=objects.constEnd();++it)
     {
-        if(i.value().gettype() == "table" && i.value().getname() == ui->editName->text())
+        if((*it)->type() == sqlb::Object::Types::Table && (*it)->name() == ui->editName->text())
         {
-            if((size_t)i.value().table.fields().size() != csv.columns())
+            if((size_t)(*it).dynamicCast<sqlb::Table>()->fields().size() != csv.columns())
             {
                 QMessageBox::warning(this, QApplication::applicationName(),
                                      tr("There is already a table of that name and an import into an existing table is only possible if the number of columns match."));
@@ -207,15 +207,15 @@ void ImportCsvDialog::accept()
 
     // Create a savepoint, so we can rollback in case of any errors during importing
     // db needs to be saved or an error will occur
-    QString restorepointName = QString("CSVIMPORT_%1").arg(QDateTime::currentMSecsSinceEpoch());
+    QString restorepointName = pdb->generateSavepointName("csvimport");
     if(!pdb->setSavepoint(restorepointName))
-        return rollback(this, pdb, progress, restorepointName, 0, tr("Creating restore point failed: %1").arg(pdb->lastErrorMessage));
+        return rollback(this, pdb, progress, restorepointName, 0, tr("Creating restore point failed: %1").arg(pdb->lastError()));
 
     // Create table
     if(!importToExistingTable)
     {
         if(!pdb->createTable(ui->editName->text(), fieldList))
-            return rollback(this, pdb, progress, restorepointName, 0, tr("Creating the table failed: %1").arg(pdb->lastErrorMessage));
+            return rollback(this, pdb, progress, restorepointName, 0, tr("Creating the table failed: %1").arg(pdb->lastError()));
     }
 
     // now lets import all data, one row at a time
@@ -246,7 +246,7 @@ void ImportCsvDialog::accept()
         sql.append(");");
 
         if(!pdb->executeSQL(sql, false, false))
-            return rollback(this, pdb, progress, restorepointName, std::distance(itBegin, it) + 1, tr("Inserting row failed: %1").arg(pdb->lastErrorMessage));
+            return rollback(this, pdb, progress, restorepointName, std::distance(itBegin, it) + 1, tr("Inserting row failed: %1").arg(pdb->lastError()));
 
         // Update progress bar and check if cancel button was clicked
         unsigned int prog = std::distance(csv.csv().begin(), it);

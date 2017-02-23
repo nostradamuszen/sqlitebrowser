@@ -1,4 +1,5 @@
 #include "FilterLineEdit.h"
+#include "Settings.h"
 
 #include <QTimer>
 #include <QKeyEvent>
@@ -6,9 +7,7 @@
 FilterLineEdit::FilterLineEdit(QWidget* parent, QList<FilterLineEdit*>* filters, int columnnum) : QLineEdit(parent), filterList(filters), columnNumber(columnnum)
 {
     setPlaceholderText(tr("Filter"));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
     setClearButtonEnabled(true);
-#endif
     setProperty("column", columnnum);            // Store the column number for later use
 
     // Introduce a timer for delaying the signal triggered whenever the user changes the filter value.
@@ -17,7 +16,7 @@ FilterLineEdit::FilterLineEdit(QWidget* parent, QList<FilterLineEdit*>* filters,
     // is (re)started. As soon as the user stops typing the timer has a chance to trigger and call the
     // delayedSignalTimerTriggered() method which then stops the timer and emits the delayed signal.
     delaySignalTimer = new QTimer(this);
-    delaySignalTimer->setInterval(300);         // This is the milliseconds of not-typing we want to wait before triggering
+    delaySignalTimer->setInterval(Settings::getSettingsValue("databrowser", "filter_delay").toInt());  // This is the milliseconds of not-typing we want to wait before triggering
     connect(this, SIGNAL(textChanged(QString)), delaySignalTimer, SLOT(start()));
     connect(delaySignalTimer, SIGNAL(timeout()), this, SLOT(delayedSignalTimerTriggered()));
 

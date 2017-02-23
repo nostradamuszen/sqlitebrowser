@@ -1,15 +1,15 @@
 #include "PreferencesDialog.h"
 #include "ui_PreferencesDialog.h"
-#include "sqlitedb.h"
 #include "FileDialog.h"
+#include "Settings.h"
+#include "Application.h"
+#include "MainWindow.h"
 
 #include <QDir>
-#include <QSettings>
 #include <QColorDialog>
 #include <QMessageBox>
 #include <QKeyEvent>
-
-QHash<QString, QVariant> PreferencesDialog::m_hCache;
+#include <QStandardPaths>
 
 PreferencesDialog::PreferencesDialog(QWidget* parent)
     : QDialog(parent),
@@ -19,6 +19,7 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
     ui->treeSyntaxHighlighting->setColumnHidden(0, true);
     ui->labelDatabaseDefaultSqlText->setVisible(false);
     ui->editDatabaseDefaultSqlText->setVisible(false);
+    ui->tableClientCerts->setColumnHidden(0, true);
 
     ui->fr_bin_bg->installEventFilter(this);
     ui->fr_bin_fg->installEventFilter(this);
@@ -56,17 +57,32 @@ void PreferencesDialog::chooseLocation()
 
 void PreferencesDialog::loadSettings()
 {
-    ui->encodingComboBox->setCurrentIndex(ui->encodingComboBox->findText(getSettingsValue("db", "defaultencoding").toString(), Qt::MatchFixedString));
-    ui->comboDefaultLocation->setCurrentIndex(getSettingsValue("db", "savedefaultlocation").toInt());
-    ui->locationEdit->setText(getSettingsValue("db", "defaultlocation").toString());
-    ui->checkUpdates->setChecked(getSettingsValue("checkversion", "enabled").toBool());
-    ui->checkHideSchemaLinebreaks->setChecked(getSettingsValue("db", "hideschemalinebreaks").toBool());
-    ui->foreignKeysCheckBox->setChecked(getSettingsValue("db", "foreignkeys").toBool());
-    ui->spinPrefetchSize->setValue(getSettingsValue("db", "prefetchsize").toInt());
-    ui->editDatabaseDefaultSqlText->setText(getSettingsValue("db", "defaultsqltext").toString());
+    ui->encodingComboBox->setCurrentIndex(ui->encodingComboBox->findText(Settings::getSettingsValue("db", "defaultencoding").toString(), Qt::MatchFixedString));
+    ui->comboDefaultLocation->setCurrentIndex(Settings::getSettingsValue("db", "savedefaultlocation").toInt());
+    ui->locationEdit->setText(Settings::getSettingsValue("db", "defaultlocation").toString());
+    ui->checkUpdates->setChecked(Settings::getSettingsValue("checkversion", "enabled").toBool());
 
-    ui->comboDataBrowserFont->setCurrentIndex(ui->comboEditorFont->findText(getSettingsValue("databrowser", "font").toString()));
-    ui->spinDataBrowserFontSize->setValue(getSettingsValue("databrowser", "fontsize").toInt());
+    ui->checkHideSchemaLinebreaks->setChecked(Settings::getSettingsValue("db", "hideschemalinebreaks").toBool());
+    ui->foreignKeysCheckBox->setChecked(Settings::getSettingsValue("db", "foreignkeys").toBool());
+    ui->spinPrefetchSize->setValue(Settings::getSettingsValue("db", "prefetchsize").toInt());
+    ui->editDatabaseDefaultSqlText->setText(Settings::getSettingsValue("db", "defaultsqltext").toString());
+
+    ui->defaultFieldTypeComboBox->addItems(sqlb::Field::Datatypes);
+
+    int defaultFieldTypeIndex = Settings::getSettingsValue("db", "defaultfieldtype").toInt();
+
+    if (defaultFieldTypeIndex < sqlb::Field::Datatypes.count())
+    {
+        ui->defaultFieldTypeComboBox->setCurrentIndex(defaultFieldTypeIndex);
+    }
+
+    // Gracefully handle the preferred Data Browser font not being available
+    int matchingFont = ui->comboDataBrowserFont->findText(Settings::getSettingsValue("databrowser", "font").toString(), Qt::MatchExactly);
+    if (matchingFont == -1)
+        matchingFont = ui->comboDataBrowserFont->findText(Settings::getSettingsDefaultValue("databrowser", "font").toString());
+    ui->comboDataBrowserFont->setCurrentIndex(matchingFont);
+
+    ui->spinDataBrowserFontSize->setValue(Settings::getSettingsValue("databrowser", "fontsize").toInt());
     loadColorSetting(ui->fr_null_fg, "null_fg");
     loadColorSetting(ui->fr_null_bg, "null_bg");
     loadColorSetting(ui->fr_reg_fg, "reg_fg");
@@ -74,289 +90,184 @@ void PreferencesDialog::loadSettings()
     loadColorSetting(ui->fr_bin_fg, "bin_fg");
     loadColorSetting(ui->fr_bin_bg, "bin_bg");
 
-    ui->txtNull->setText(getSettingsValue("databrowser", "null_text").toString());
-    ui->editFilterEscape->setText(getSettingsValue("databrowser", "filter_escape").toString());
+    ui->spinSymbolLimit->setValue(Settings::getSettingsValue("databrowser", "symbol_limit").toInt());
+    ui->txtNull->setText(Settings::getSettingsValue("databrowser", "null_text").toString());
+    ui->editFilterEscape->setText(Settings::getSettingsValue("databrowser", "filter_escape").toString());
+    ui->spinFilterDelay->setValue(Settings::getSettingsValue("databrowser", "filter_delay").toInt());
 
     for(int i=0; i < ui->treeSyntaxHighlighting->topLevelItemCount(); ++i)
     {
         QString name = ui->treeSyntaxHighlighting->topLevelItem(i)->text(0);
-        QString colorname = getSettingsValue("syntaxhighlighter", name + "_colour").toString();
+        QString colorname = Settings::getSettingsValue("syntaxhighlighter", name + "_colour").toString();
         QColor color = QColor(colorname);
         ui->treeSyntaxHighlighting->topLevelItem(i)->setTextColor(2, color);
         ui->treeSyntaxHighlighting->topLevelItem(i)->setBackgroundColor(2, color);
         ui->treeSyntaxHighlighting->topLevelItem(i)->setText(2, colorname);
         if (name != "null") {
-            ui->treeSyntaxHighlighting->topLevelItem(i)->setCheckState(3, getSettingsValue("syntaxhighlighter", name + "_bold").toBool() ? Qt::Checked : Qt::Unchecked);
-            ui->treeSyntaxHighlighting->topLevelItem(i)->setCheckState(4, getSettingsValue("syntaxhighlighter", name + "_italic").toBool() ? Qt::Checked : Qt::Unchecked);
-            ui->treeSyntaxHighlighting->topLevelItem(i)->setCheckState(5, getSettingsValue("syntaxhighlighter", name + "_underline").toBool() ? Qt::Checked : Qt::Unchecked);
+            ui->treeSyntaxHighlighting->topLevelItem(i)->setCheckState(3, Settings::getSettingsValue("syntaxhighlighter", name + "_bold").toBool() ? Qt::Checked : Qt::Unchecked);
+            ui->treeSyntaxHighlighting->topLevelItem(i)->setCheckState(4, Settings::getSettingsValue("syntaxhighlighter", name + "_italic").toBool() ? Qt::Checked : Qt::Unchecked);
+            ui->treeSyntaxHighlighting->topLevelItem(i)->setCheckState(5, Settings::getSettingsValue("syntaxhighlighter", name + "_underline").toBool() ? Qt::Checked : Qt::Unchecked);
         }
     }
-    ui->comboEditorFont->setCurrentIndex(ui->comboEditorFont->findText(getSettingsValue("editor", "font").toString()));
-    ui->spinEditorFontSize->setValue(getSettingsValue("editor", "fontsize").toInt());
-    ui->spinTabSize->setValue(getSettingsValue("editor", "tabsize").toInt());
-    ui->spinLogFontSize->setValue(getSettingsValue("log", "fontsize").toInt());
-    ui->checkErrorIndicators->setChecked(getSettingsValue("editor", "error_indicators").toBool());
-    ui->checkHorizontalTiling->setChecked(getSettingsValue("editor", "horizontal_tiling").toBool());
 
-    ui->listExtensions->addItems(getSettingsValue("extensions", "list").toStringList());
-    ui->checkRegexDisabled->setChecked(getSettingsValue("extensions", "disableregex").toBool());
+    // Remote settings
+    ui->checkUseRemotes->setChecked(Settings::getSettingsValue("remote", "active").toBool());
+    {
+        auto ca_certs = static_cast<Application*>(qApp)->mainWindow()->getRemote().caCertificates();
+        ui->tableCaCerts->setRowCount(ca_certs.size());
+        for(int i=0;i<ca_certs.size();i++)
+        {
+            QSslCertificate cert = ca_certs.at(i);
+
+            QTableWidgetItem* cert_cn = new QTableWidgetItem(cert.subjectInfo(QSslCertificate::CommonName).at(0));
+            cert_cn->setFlags(Qt::ItemIsSelectable);
+            ui->tableCaCerts->setItem(i, 0, cert_cn);
+
+            QTableWidgetItem* cert_o = new QTableWidgetItem(cert.subjectInfo(QSslCertificate::Organization).at(0));
+            cert_o->setFlags(Qt::ItemIsSelectable);
+            ui->tableCaCerts->setItem(i, 1, cert_o);
+
+            QTableWidgetItem* cert_from = new QTableWidgetItem(cert.effectiveDate().toString());
+            cert_from->setFlags(Qt::ItemIsSelectable);
+            ui->tableCaCerts->setItem(i, 2, cert_from);
+
+            QTableWidgetItem* cert_to = new QTableWidgetItem(cert.expiryDate().toString());
+            cert_to->setFlags(Qt::ItemIsSelectable);
+            ui->tableCaCerts->setItem(i, 3, cert_to);
+
+            QTableWidgetItem* cert_serialno = new QTableWidgetItem(QString(cert.serialNumber()));
+            cert_serialno->setFlags(Qt::ItemIsSelectable);
+            ui->tableCaCerts->setItem(i, 4, cert_serialno);
+        }
+    }
+    {
+        QStringList client_certs = Settings::getSettingsValue("remote", "client_certificates").toStringList();
+        foreach(const QString& file, client_certs)
+        {
+            auto certs = QSslCertificate::fromPath(file);
+            foreach(const QSslCertificate& cert, certs)
+                addClientCertToTable(file, cert);
+        }
+    }
+
+    // Gracefully handle the preferred Editor font not being available
+    matchingFont = ui->comboEditorFont->findText(Settings::getSettingsValue("editor", "font").toString(), Qt::MatchExactly);
+    if (matchingFont == -1)
+        matchingFont = ui->comboDataBrowserFont->findText(Settings::getSettingsDefaultValue("editor", "font").toString());
+    ui->comboEditorFont->setCurrentIndex(matchingFont);
+
+    ui->spinEditorFontSize->setValue(Settings::getSettingsValue("editor", "fontsize").toInt());
+    ui->spinTabSize->setValue(Settings::getSettingsValue("editor", "tabsize").toInt());
+    ui->spinLogFontSize->setValue(Settings::getSettingsValue("log", "fontsize").toInt());
+    ui->checkAutoCompletion->setChecked(Settings::getSettingsValue("editor", "auto_completion").toBool());
+    ui->checkErrorIndicators->setChecked(Settings::getSettingsValue("editor", "error_indicators").toBool());
+    ui->checkHorizontalTiling->setChecked(Settings::getSettingsValue("editor", "horizontal_tiling").toBool());
+
+    ui->listExtensions->addItems(Settings::getSettingsValue("extensions", "list").toStringList());
+    ui->checkRegexDisabled->setChecked(Settings::getSettingsValue("extensions", "disableregex").toBool());
     fillLanguageBox();
 }
 
 void PreferencesDialog::saveSettings()
 {
-    setSettingsValue("db", "defaultencoding", ui->encodingComboBox->currentText());
-    setSettingsValue("db", "defaultlocation", ui->locationEdit->text());
-    setSettingsValue("db", "savedefaultlocation", ui->comboDefaultLocation->currentIndex());
-    setSettingsValue("db", "hideschemalinebreaks", ui->checkHideSchemaLinebreaks->isChecked());
-    setSettingsValue("db", "foreignkeys", ui->foreignKeysCheckBox->isChecked());
-    setSettingsValue("db", "prefetchsize", ui->spinPrefetchSize->value());
-    setSettingsValue("db", "defaultsqltext", ui->editDatabaseDefaultSqlText->text());
+    Settings::setSettingsValue("db", "defaultencoding", ui->encodingComboBox->currentText());
+    Settings::setSettingsValue("db", "defaultlocation", ui->locationEdit->text());
+    Settings::setSettingsValue("db", "savedefaultlocation", ui->comboDefaultLocation->currentIndex());
+    Settings::setSettingsValue("db", "hideschemalinebreaks", ui->checkHideSchemaLinebreaks->isChecked());
+    Settings::setSettingsValue("db", "foreignkeys", ui->foreignKeysCheckBox->isChecked());
+    Settings::setSettingsValue("db", "prefetchsize", ui->spinPrefetchSize->value());
+    Settings::setSettingsValue("db", "defaultsqltext", ui->editDatabaseDefaultSqlText->text());
 
-    setSettingsValue("checkversion", "enabled", ui->checkUpdates->isChecked());
+    Settings::setSettingsValue("db", "defaultfieldtype", ui->defaultFieldTypeComboBox->currentIndex());
 
-    setSettingsValue("databrowser", "font", ui->comboDataBrowserFont->currentText());
-    setSettingsValue("databrowser", "fontsize", ui->spinDataBrowserFontSize->value());
+    Settings::setSettingsValue("checkversion", "enabled", ui->checkUpdates->isChecked());
+
+    Settings::setSettingsValue("databrowser", "font", ui->comboDataBrowserFont->currentText());
+    Settings::setSettingsValue("databrowser", "fontsize", ui->spinDataBrowserFontSize->value());
     saveColorSetting(ui->fr_null_fg, "null_fg");
     saveColorSetting(ui->fr_null_bg, "null_bg");
     saveColorSetting(ui->fr_reg_fg, "reg_fg");
     saveColorSetting(ui->fr_reg_bg, "reg_bg");
     saveColorSetting(ui->fr_bin_fg, "bin_fg");
     saveColorSetting(ui->fr_bin_bg, "bin_bg");
-    setSettingsValue("databrowser", "null_text", ui->txtNull->text());
-    setSettingsValue("databrowser", "filter_escape", ui->editFilterEscape->text());
+    Settings::setSettingsValue("databrowser", "symbol_limit", ui->spinSymbolLimit->value());
+    Settings::setSettingsValue("databrowser", "null_text", ui->txtNull->text());
+    Settings::setSettingsValue("databrowser", "filter_escape", ui->editFilterEscape->text());
+    Settings::setSettingsValue("databrowser", "filter_delay", ui->spinFilterDelay->value());
 
     for(int i=0; i < ui->treeSyntaxHighlighting->topLevelItemCount(); ++i)
     {
         QString name = ui->treeSyntaxHighlighting->topLevelItem(i)->text(0);
-        setSettingsValue("syntaxhighlighter", name + "_colour", ui->treeSyntaxHighlighting->topLevelItem(i)->text(2));
-        setSettingsValue("syntaxhighlighter", name + "_bold", ui->treeSyntaxHighlighting->topLevelItem(i)->checkState(3) == Qt::Checked);
-        setSettingsValue("syntaxhighlighter", name + "_italic", ui->treeSyntaxHighlighting->topLevelItem(i)->checkState(4) == Qt::Checked);
-        setSettingsValue("syntaxhighlighter", name + "_underline", ui->treeSyntaxHighlighting->topLevelItem(i)->checkState(5) == Qt::Checked);
+        Settings::setSettingsValue("syntaxhighlighter", name + "_colour", ui->treeSyntaxHighlighting->topLevelItem(i)->text(2));
+        Settings::setSettingsValue("syntaxhighlighter", name + "_bold", ui->treeSyntaxHighlighting->topLevelItem(i)->checkState(3) == Qt::Checked);
+        Settings::setSettingsValue("syntaxhighlighter", name + "_italic", ui->treeSyntaxHighlighting->topLevelItem(i)->checkState(4) == Qt::Checked);
+        Settings::setSettingsValue("syntaxhighlighter", name + "_underline", ui->treeSyntaxHighlighting->topLevelItem(i)->checkState(5) == Qt::Checked);
     }
-    setSettingsValue("editor", "font", ui->comboEditorFont->currentText());
-    setSettingsValue("editor", "fontsize", ui->spinEditorFontSize->value());
-    setSettingsValue("editor", "tabsize", ui->spinTabSize->value());
-    setSettingsValue("log", "fontsize", ui->spinLogFontSize->value());
-    setSettingsValue("editor", "error_indicators", ui->checkErrorIndicators->isChecked());
-    setSettingsValue("editor", "horizontal_tiling", ui->checkHorizontalTiling->isChecked());
+    Settings::setSettingsValue("editor", "font", ui->comboEditorFont->currentText());
+    Settings::setSettingsValue("editor", "fontsize", ui->spinEditorFontSize->value());
+    Settings::setSettingsValue("editor", "tabsize", ui->spinTabSize->value());
+    Settings::setSettingsValue("log", "fontsize", ui->spinLogFontSize->value());
+    Settings::setSettingsValue("editor", "auto_completion", ui->checkAutoCompletion->isChecked());
+    Settings::setSettingsValue("editor", "error_indicators", ui->checkErrorIndicators->isChecked());
+    Settings::setSettingsValue("editor", "horizontal_tiling", ui->checkHorizontalTiling->isChecked());
 
     QStringList extList;
     foreach(QListWidgetItem* item, ui->listExtensions->findItems(QString("*"), Qt::MatchWrap | Qt::MatchWildcard))
         extList.append(item->text());
-    setSettingsValue("extensions", "list", extList);
-    setSettingsValue("extensions", "disableregex", ui->checkRegexDisabled->isChecked());
+    Settings::setSettingsValue("extensions", "list", extList);
+    Settings::setSettingsValue("extensions", "disableregex", ui->checkRegexDisabled->isChecked());
+
+    // Save remote settings
+    Settings::setSettingsValue("remote", "active", ui->checkUseRemotes->isChecked());
+    QStringList old_client_certs = Settings::getSettingsValue("remote", "client_certificates").toStringList();
+    QStringList new_client_certs;
+    for(int i=0;i<ui->tableClientCerts->rowCount();i++)
+    {
+        // Loop through the new list of client certs
+
+        // If this certificate was already imported, remove it from the list of old certificates. All remaining certificates on this
+        // list will be deleted later on.
+        QString path = ui->tableClientCerts->item(i, 0)->text();
+        if(old_client_certs.contains(path))
+        {
+            // This is a cert that is already imported
+            old_client_certs.removeAll(path);
+            new_client_certs.push_back(path);
+        } else {
+            // This is a new certificate. Copy file to a safe place.
+
+            // Generate unique destination file name
+            QString copy_to = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).append("/").append(QFileInfo(path).fileName());
+            int suffix = 0;
+            do
+            {
+                suffix++;
+            } while(QFile::exists(copy_to + QString::number(suffix)));
+
+            // Copy file
+            copy_to.append(QString::number(suffix));
+            QDir().mkpath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+            QFile::copy(path, copy_to);
+
+            new_client_certs.push_back(copy_to);
+        }
+    }
+    foreach(const QString& file, old_client_certs)
+    {
+        // Now only the deleted client certs are still in the old list. Delete the cert files associated with them.
+        QFile::remove(file);
+    }
+    Settings::setSettingsValue("remote", "client_certificates", new_client_certs);
 
     // Warn about restarting to change language
     QVariant newLanguage = ui->languageComboBox->itemData(ui->languageComboBox->currentIndex());
-    if (newLanguage != getSettingsValue("General", "language"))
+    if (newLanguage != Settings::getSettingsValue("General", "language"))
         QMessageBox::information(this, QApplication::applicationName(),
                                  tr("The language will change after you restart the application."));
 
-    setSettingsValue("General", "language", newLanguage);
+    Settings::setSettingsValue("General", "language", newLanguage);
 
     accept();
-}
-
-QVariant PreferencesDialog::getSettingsValue(const QString& group, const QString& name)
-{
-    // Have a look in the cache first
-    QHash<QString, QVariant>::iterator cacheIndex = m_hCache.find(group + name);
-    if(cacheIndex != m_hCache.end())
-    {
-        return cacheIndex.value();
-    } else {
-        // Nothing found in the cache, so get the value from the settings file or get the default value if there is no value set yet
-        QSettings settings(QApplication::organizationName(), QApplication::organizationName());
-        QVariant value = settings.value(group + "/" + name, getSettingsDefaultValue(group, name));
-
-        // Store this value in the cache for further usage and return it afterwards
-        m_hCache.insert(group + name, value);
-        return value;
-    }
-}
-
-void PreferencesDialog::setSettingsValue(const QString& group, const QString& name, const QVariant& value, bool dont_save_to_disk)
-{
-    // Sometime the value has to be saved for the current session only but get discarded when the application exits.
-    // In order to achieve this this flag can be set which disables the save to disk mechanism and only leaves the save to cache part active.
-    if(dont_save_to_disk == false)
-    {
-        // Set the group and save the given value
-        QSettings settings(QApplication::organizationName(), QApplication::organizationName());
-        settings.beginGroup(group);
-        settings.setValue(name, value);
-        settings.endGroup();
-    }
-
-    // Also change it in the cache
-    m_hCache[group + name] = value;
-}
-
-QVariant PreferencesDialog::getSettingsDefaultValue(const QString& group, const QString& name)
-{
-    // db/defaultencoding?
-    if(group == "db" && name == "defaultencoding")
-        return "UTF-8";
-
-    // db/savedefaultlocation?
-    if(group == "db" && name == "savedefaultlocation")
-        return 2;
-
-    // db/defaultlocation?
-    if(group == "db" && name == "defaultlocation")
-        return QDir::homePath();
-
-    // db/lastlocation?
-    if(group == "db" && name == "lastlocation")
-        return getSettingsValue("db", "defaultlocation");
-
-    // db/hideschemalinebreaks?
-    if(group == "db" && name == "hideschemalinebreaks")
-        return false;
-
-    // db/foreignkeys?
-    if(group == "db" && name == "foreignkeys")
-        return true;
-
-    // db/prefetchsize?
-    if(group == "db" && name == "prefetchsize")
-        return 50000;
-
-    // db/defaultsqltext?
-    if(group == "db" && name == "defaultsqltext")
-        return "";
-
-    // MainWindow/geometry?
-    if(group == "MainWindow" && name == "geometry")
-        return "";
-
-    // MainWindow/windowState?
-    if(group == "MainWindow" && name == "windowState")
-        return "";
-
-    // SQLLogDock/Log?
-    if(group == "SQLLogDock" && name == "Log")
-        return "Application";
-
-    // General/recentFileList?
-    if(group == "General" && name == "recentFileList")
-        return QStringList();
-
-    // General/language?
-    if(group == "General" && name == "language")
-        return QLocale::system().name();
-
-    // checkversion/enabled
-    if(group == "checkversion" && name == "enabled")
-        return true;
-
-    // Data Browser/NULL Fields
-    if(group == "databrowser")
-    {
-        if(name == "font")
-            return "Sans Serif";
-        if(name == "fontsize")
-            return 10;
-        if (name == "null_text")
-            return "NULL";
-        if (name == "filter_escape")
-            return "\\";
-        if (name == "null_fg_colour")
-            return QColor(Qt::lightGray).name();
-        if (name == "null_bg_colour")
-            return QColor(Qt::white).name();
-        if (name == "reg_fg_colour")
-            return QColor(Qt::black).name();
-        if (name == "reg_bg_colour")
-            return QColor(Qt::white).name();
-        if (name == "bin_fg_colour")
-            return QColor(Qt::lightGray).name();
-        if (name == "bin_bg_colour")
-            return QColor(Qt::white).name();
-    }
-
-    // syntaxhighlighter?
-    if(group == "syntaxhighlighter")
-    {
-        // Bold? Only tables, functions and keywords are bold by default
-        if(name.right(4) == "bold")
-            return name == "keyword_bold" || name == "table_bold" || name == "function_bold";
-
-        // Italic? Nothing by default
-        if(name.right(6) == "italic")
-            return false;
-
-        // Underline? Nothing by default
-        if(name.right(9) == "underline")
-            return false;
-
-        // Colour?
-        if(name.right(6) == "colour")
-        {
-            if(name == "keyword_colour")
-                return QColor(Qt::darkBlue).name();
-            else if(name == "function_colour")
-                return QColor(Qt::blue).name();
-            else if(name == "table_colour")
-                return QColor(Qt::darkCyan).name();
-            else if(name == "comment_colour")
-                return QColor(Qt::darkGreen).name();
-            else if(name == "identifier_colour")
-                return QColor(Qt::darkMagenta).name();
-            else if(name == "string_colour")
-                return QColor(Qt::red).name();
-            else if(name == "currentline_colour")
-                return QColor(236, 236, 245).name();
-        }
-    }
-
-    // editor/font?
-    if(group == "editor" && name == "font")
-        return "Monospace";
-
-    // editor/fontsize or log/fontsize?
-    if((group == "editor" || group == "log") && name == "fontsize")
-        return 9;
-
-    if(group == "editor")
-    {
-        if(name == "tabsize")
-        {
-            return 4;
-        }
-    }
-
-    // editor/error_indicators?
-    if(group == "editor" && name == "error_indicators")
-        return true;
-
-    // editor/horizontal_tiling?
-    if(group == "editor" && name == "horizontal_tiling")
-        return false;
-
-    // extensions/list?
-    if(group == "extensions" && name == "list")
-        return QStringList();
-
-    // extensions/disableregex?
-    if(group == "extension" && name == "disableregex")
-        return false;
-
-    // PlotDock/lineType or pointShape?
-    if(group == "PlotDock")
-    {
-        // QCPGraph::lsLine
-        if(name == "lineType")
-            return 1;
-
-        // QCPScatterStyle::ssDisk
-        if(name == "pointShape")
-            return 4;
-    }
-
-    // Unknown combination of group and name? Return an invalid QVariant!
-    return QVariant();
 }
 
 void PreferencesDialog::showColourDialog(QTreeWidgetItem* item, int column)
@@ -478,7 +389,7 @@ void PreferencesDialog::fillLanguageBox()
     ui->languageComboBox->model()->sort(0);
 
     // Try to select the language for the stored locale
-    int index = ui->languageComboBox->findData(getSettingsValue("General", "language"),
+    int index = ui->languageComboBox->findData(Settings::getSettingsValue("General", "language"),
                                                Qt::UserRole, Qt::MatchExactly);
 
     // If there's no translation for the current locale, default to English
@@ -499,12 +410,90 @@ void PreferencesDialog::loadColorSetting(QFrame *frame, const QString & settingN
 {
     QPalette palette = frame->palette();
     palette.setColor(frame->backgroundRole(),
-        QColor(getSettingsValue("databrowser", settingName + "_colour").toString()));
+        QColor(Settings::getSettingsValue("databrowser", settingName + "_colour").toString()));
     frame->setPalette(palette);
 }
 
 void PreferencesDialog::saveColorSetting(QFrame *frame, const QString & settingName)
 {
-    setSettingsValue("databrowser", settingName + "_colour",
+    Settings::setSettingsValue("databrowser", settingName + "_colour",
         frame->palette().color(frame->backgroundRole()));
+}
+
+void PreferencesDialog::activateRemoteTab(bool active)
+{
+    ui->tabWidget->setTabEnabled(ui->tabWidget->indexOf(ui->tabRemote), active);
+}
+
+void PreferencesDialog::addClientCertificate()
+{
+    // Get certificate file to import and abort here if no file gets selected
+    // NOTE: We assume here that this file contains both, certificate and private key!
+    QString path = FileDialog::getOpenFileName(this, tr("Import certificate file"), "*.pem");
+    if(path.isEmpty())
+        return;
+
+    // Open file and check if any certificates were imported
+    auto certs = QSslCertificate::fromPath(path);
+    if(certs.size() == 0)
+    {
+        QMessageBox::warning(this, qApp->applicationName(), tr("No certificates found in this file."));
+        return;
+    }
+
+    // Add certificates to list
+    for(int i=0;i<certs.size();i++)
+        addClientCertToTable(path, certs.at(i));
+}
+
+void PreferencesDialog::removeClientCertificate()
+{
+    // Any row selected?
+    int row = ui->tableClientCerts->currentRow();
+    if(row == -1)
+        return;
+
+    // Double check
+    if(QMessageBox::question(this, qApp->applicationName(), tr("Are you sure you want do remove this certificate? All certificate "
+                                                               "data will be deleted from the application settings!"),
+                             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
+    {
+        ui->tableClientCerts->removeRow(row);
+    }
+}
+
+void PreferencesDialog::addClientCertToTable(const QString& path, const QSslCertificate& cert)
+{
+    // Do nothing if the file doesn't even exist
+    if(!QFile::exists(path))
+        return;
+
+    // Add new row
+    int row = ui->tableClientCerts->rowCount();
+    ui->tableClientCerts->setRowCount(row + 1);
+
+    // Fill row with data
+    QTableWidgetItem* cert_file = new QTableWidgetItem(path);
+    cert_file->setFlags(Qt::ItemIsSelectable);
+    ui->tableClientCerts->setItem(row, 0, cert_file);
+
+    QTableWidgetItem* cert_subject_cn = new QTableWidgetItem(cert.subjectInfo(QSslCertificate::CommonName).at(0));
+    cert_subject_cn->setFlags(Qt::ItemIsSelectable);
+    ui->tableClientCerts->setItem(row, 1, cert_subject_cn);
+
+    QTableWidgetItem* cert_issuer_cn = new QTableWidgetItem(cert.issuerInfo(QSslCertificate::CommonName).at(0));
+    cert_issuer_cn->setFlags(Qt::ItemIsSelectable);
+    ui->tableClientCerts->setItem(row, 2, cert_issuer_cn);
+
+    QTableWidgetItem* cert_from = new QTableWidgetItem(cert.effectiveDate().toString());
+    cert_from->setFlags(Qt::ItemIsSelectable);
+    ui->tableClientCerts->setItem(row, 3, cert_from);
+
+    QTableWidgetItem* cert_to = new QTableWidgetItem(cert.expiryDate().toString());
+    cert_to->setFlags(Qt::ItemIsSelectable);
+    ui->tableClientCerts->setItem(row, 4, cert_to);
+
+    QTableWidgetItem* cert_serialno = new QTableWidgetItem(QString(cert.serialNumber()));
+    cert_serialno->setFlags(Qt::ItemIsSelectable);
+    ui->tableClientCerts->setItem(row, 5, cert_serialno);
 }

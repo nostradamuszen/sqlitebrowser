@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>590</width>
-    <height>495</height>
+    <width>597</width>
+    <height>614</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,17 @@
        <string>&amp;General</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout_3">
-       <item row="1" column="1">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Default &amp;location</string>
+         </property>
+         <property name="buddy">
+          <cstring>locationEdit</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
         <layout class="QVBoxLayout" name="verticalLayout_6">
          <item>
           <widget class="QComboBox" name="comboDefaultLocation">
@@ -81,16 +91,6 @@
         </layout>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Default &amp;location</string>
-         </property>
-         <property name="buddy">
-          <cstring>locationEdit</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
         <widget class="QLabel" name="label_9">
          <property name="text">
           <string>Lan&amp;guage</string>
@@ -100,7 +100,7 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="1" column="1">
         <widget class="QComboBox" name="languageComboBox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -119,6 +119,23 @@
            <width>20</width>
            <height>15</height>
           </size>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="labelUseRemotes">
+         <property name="text">
+          <string>Show remote options</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QCheckBox" name="checkUseRemotes">
+         <property name="text">
+          <string>enabled</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -232,7 +249,7 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="5" column="1">
         <widget class="QPushButton" name="buttonDatabaseAdvanced">
          <property name="text">
           <string>Advanced</string>
@@ -246,8 +263,8 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
-        <widget class="SqlTextEdit" name="editDatabaseDefaultSqlText" native="true">
+       <item row="7" column="1">
+        <widget class="SqlTextEdit" name="editDatabaseDefaultSqlText">
          <property name="minimumSize">
           <size>
            <width>20</width>
@@ -262,17 +279,17 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="labelDatabaseDefaultSqlText">
          <property name="text">
-          <string>SQL to execute after opening database</string>
+          <string>SQ&amp;L to execute after opening database</string>
          </property>
          <property name="buddy">
           <cstring>editDatabaseDefaultSqlText</cstring>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <spacer name="horizontalSpacer_2">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -284,6 +301,16 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="4" column="1">
+        <widget class="QComboBox" name="defaultFieldTypeComboBox"/>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="defaultFieldTypeLabel">
+         <property name="text">
+          <string>Default field type</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -325,6 +352,38 @@
             </item>
             <item row="1" column="1">
              <widget class="QSpinBox" name="spinDataBrowserFontSize"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_5">
+           <property name="title">
+            <string>Content</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_5">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_symbol_limit">
+              <property name="text">
+               <string>Symbol limit in cell</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="spinSymbolLimit">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>20000</number>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -532,20 +591,40 @@
             <string>Filters</string>
            </property>
            <layout class="QFormLayout" name="gridLayout_4">
-            <item row="0" column="1">
+            <item row="1" column="1">
              <widget class="QLineEdit" name="editFilterEscape">
               <property name="maxLength">
                <number>1</number>
               </property>
              </widget>
             </item>
-            <item row="0" column="0">
+            <item row="1" column="0">
              <widget class="QLabel" name="label_18">
               <property name="text">
                <string>Escape character</string>
               </property>
               <property name="buddy">
                <cstring>editFilterEscape</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_19">
+              <property name="text">
+               <string>Delay time (&amp;ms)</string>
+              </property>
+              <property name="buddy">
+               <cstring>spinFilterDelay</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="spinFilterDelay">
+              <property name="toolTip">
+               <string>Set the waiting time before a new filter value is applied. Can be set to 0 for disabling waiting.</string>
+              </property>
+              <property name="maximum">
+               <number>5000</number>
               </property>
              </widget>
             </item>
@@ -789,7 +868,7 @@
          <item row="0" column="1">
           <widget class="QFontComboBox" name="comboEditorFont"/>
          </item>
-         <item row="4" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="label_15">
            <property name="text">
             <string>Error indicators</string>
@@ -799,7 +878,7 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
+         <item row="5" column="1">
           <widget class="QCheckBox" name="checkErrorIndicators">
            <property name="toolTip">
             <string>Enabling error indicators highlights the SQL code lines that caused errors during the last execution</string>
@@ -809,7 +888,7 @@
            </property>
           </widget>
          </item>
-         <item row="5" column="0">
+         <item row="6" column="0">
           <widget class="QLabel" name="label_10">
            <property name="text">
             <string>Hori&amp;zontal tiling</string>
@@ -819,11 +898,28 @@
            </property>
           </widget>
          </item>
-         <item row="5" column="1">
+         <item row="6" column="1">
           <widget class="QCheckBox" name="checkHorizontalTiling">
            <property name="toolTip">
             <string>If enabled the SQL code editor and the result table view are shown side by side instead of one over the other.</string>
            </property>
+           <property name="text">
+            <string>enabled</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_20">
+           <property name="text">
+            <string>Code co&amp;mpletion</string>
+           </property>
+           <property name="buddy">
+            <cstring>checkAutoCompletion</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QCheckBox" name="checkAutoCompletion">
            <property name="text">
             <string>enabled</string>
            </property>
@@ -910,6 +1006,160 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tabRemote">
+      <attribute name="title">
+       <string>Remote</string>
+      </attribute>
+      <layout class="QFormLayout" name="formLayout_5">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_21">
+         <property name="text">
+          <string>CA certificates</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QTableWidget" name="tableCaCerts">
+         <property name="selectionMode">
+          <enum>QAbstractItemView::SingleSelection</enum>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="horizontalScrollMode">
+          <enum>QAbstractItemView::ScrollPerPixel</enum>
+         </property>
+         <column>
+          <property name="text">
+           <string>Subject CN</string>
+          </property>
+          <property name="toolTip">
+           <string>Common Name</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Subject O</string>
+          </property>
+          <property name="toolTip">
+           <string>Organization</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Valid from</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Valid to</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Serial number</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_22">
+         <property name="text">
+          <string>Your certificates</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QTableWidget" name="tableClientCerts">
+           <property name="selectionMode">
+            <enum>QAbstractItemView::ExtendedSelection</enum>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+           <property name="horizontalScrollMode">
+            <enum>QAbstractItemView::ScrollPerPixel</enum>
+           </property>
+           <column>
+            <property name="text">
+             <string>File</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Subject CN</string>
+            </property>
+            <property name="toolTip">
+             <string>Subject Common Name</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Issuer CN</string>
+            </property>
+            <property name="toolTip">
+             <string>Issuer Common Name</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Valid from</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Valid to</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Serial number</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_7">
+           <item>
+            <widget class="QToolButton" name="buttonClientCertAdd">
+             <property name="icon">
+              <iconset resource="icons/icons.qrc">
+               <normaloff>:/icons/trigger_create</normaloff>:/icons/trigger_create</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="buttonClientCertRemove">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="icons/icons.qrc">
+               <normaloff>:/icons/trigger_delete</normaloff>:/icons/trigger_delete</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
@@ -927,22 +1177,23 @@
  <customwidgets>
   <customwidget>
    <class>SqlTextEdit</class>
-   <extends>QWidget</extends>
+   <extends>QTextEdit</extends>
    <header>sqltextedit.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>tabWidget</tabstop>
   <tabstop>comboDefaultLocation</tabstop>
   <tabstop>locationEdit</tabstop>
   <tabstop>setLocationButton</tabstop>
   <tabstop>languageComboBox</tabstop>
-  <tabstop>checkUpdates</tabstop>
   <tabstop>encodingComboBox</tabstop>
   <tabstop>foreignKeysCheckBox</tabstop>
   <tabstop>checkHideSchemaLinebreaks</tabstop>
   <tabstop>spinPrefetchSize</tabstop>
+  <tabstop>defaultFieldTypeComboBox</tabstop>
+  <tabstop>buttonDatabaseAdvanced</tabstop>
+  <tabstop>editDatabaseDefaultSqlText</tabstop>
   <tabstop>comboDataBrowserFont</tabstop>
   <tabstop>spinDataBrowserFontSize</tabstop>
   <tabstop>txtNull</tabstop>
@@ -952,11 +1203,14 @@
   <tabstop>fr_bin_bg</tabstop>
   <tabstop>fr_reg_fg</tabstop>
   <tabstop>fr_reg_bg</tabstop>
+  <tabstop>spinFilterDelay</tabstop>
+  <tabstop>editFilterEscape</tabstop>
   <tabstop>treeSyntaxHighlighting</tabstop>
   <tabstop>comboEditorFont</tabstop>
   <tabstop>spinEditorFontSize</tabstop>
   <tabstop>spinLogFontSize</tabstop>
   <tabstop>spinTabSize</tabstop>
+  <tabstop>checkAutoCompletion</tabstop>
   <tabstop>checkErrorIndicators</tabstop>
   <tabstop>checkHorizontalTiling</tabstop>
   <tabstop>listExtensions</tabstop>
@@ -975,8 +1229,8 @@
    <slot>saveSettings()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>275</x>
-     <y>488</y>
+     <x>287</x>
+     <y>607</y>
     </hint>
     <hint type="destinationlabel">
      <x>155</x>
@@ -991,8 +1245,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>343</x>
-     <y>488</y>
+     <x>355</x>
+     <y>607</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -1008,7 +1262,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>571</x>
-     <y>99</y>
+     <y>97</y>
     </hint>
     <hint type="destinationlabel">
      <x>245</x>
@@ -1024,7 +1278,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>571</x>
-     <y>137</y>
+     <y>135</y>
     </hint>
     <hint type="destinationlabel">
      <x>245</x>
@@ -1039,12 +1293,12 @@
    <slot>showColourDialog(QTreeWidgetItem*,int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>111</x>
-     <y>87</y>
+     <x>103</x>
+     <y>48</y>
     </hint>
     <hint type="destinationlabel">
      <x>395</x>
-     <y>-1</y>
+     <y>0</y>
     </hint>
    </hints>
   </connection>
@@ -1055,8 +1309,8 @@
    <slot>chooseLocation()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>567</x>
-     <y>100</y>
+     <x>571</x>
+     <y>114</y>
     </hint>
     <hint type="destinationlabel">
      <x>294</x>
@@ -1071,12 +1325,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>367</x>
-     <y>189</y>
+     <x>365</x>
+     <y>207</y>
     </hint>
     <hint type="destinationlabel">
-     <x>205</x>
-     <y>220</y>
+     <x>108</x>
+     <y>280</y>
     </hint>
    </hints>
   </connection>
@@ -1087,12 +1341,60 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>376</x>
-     <y>191</y>
+     <x>365</x>
+     <y>207</y>
     </hint>
     <hint type="destinationlabel">
-     <x>331</x>
-     <y>219</y>
+     <x>365</x>
+     <y>252</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkUseRemotes</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PreferencesDialog</receiver>
+   <slot>activateRemoteTab(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>172</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>382</x>
+     <y>572</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonClientCertAdd</sender>
+   <signal>clicked()</signal>
+   <receiver>PreferencesDialog</receiver>
+   <slot>addClientCertificate()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>563</x>
+     <y>257</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>596</x>
+     <y>243</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonClientCertRemove</sender>
+   <signal>clicked()</signal>
+   <receiver>PreferencesDialog</receiver>
+   <slot>removeClientCertificate()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>561</x>
+     <y>289</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>597</x>
+     <y>295</y>
     </hint>
    </hints>
   </connection>
@@ -1103,5 +1405,8 @@
   <slot>showColourDialog(QTreeWidgetItem*,int)</slot>
   <slot>addExtension()</slot>
   <slot>removeExtension()</slot>
+  <slot>activateRemoteTab(bool)</slot>
+  <slot>addClientCertificate()</slot>
+  <slot>removeClientCertificate()</slot>
  </slots>
 </ui>

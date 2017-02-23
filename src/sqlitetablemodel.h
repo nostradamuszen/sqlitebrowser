@@ -11,8 +11,13 @@ namespace sqlb { class ForeignKeyClause; }
 class SqliteTableModel : public QAbstractTableModel
 {
     Q_OBJECT
+
+#ifdef REGEX_UNIT_TEST
+    friend class TestRegex;
+#endif
+
 public:
-    explicit SqliteTableModel(QObject *parent = 0, DBBrowserDB* db = 0, size_t chunkSize = 50000, const QString& encoding = QString());
+    explicit SqliteTableModel(DBBrowserDB& db, QObject *parent = 0, size_t chunkSize = 50000, const QString& encoding = QString());
     void reset();
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
@@ -28,6 +33,8 @@ public:
 
     bool insertRows(int row, int count, const QModelIndex& parent = QModelIndex());
     bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex());
+
+    QModelIndex dittoRecord(int old_row);
 
     void setQuery(const QString& sQuery, bool dontClearHeaders = false);
     QString query() const { return m_sQuery; }
@@ -60,13 +67,14 @@ private:
     void clearCache();
 
     void buildQuery();
+    void removeCommentsFromQuery(QString& query);
     QStringList getColumns(const QString& sQuery, QVector<int>& fieldsTypes);
     int getQueryRowCount();
 
     QByteArray encode(const QByteArray& str) const;
     QByteArray decode(const QByteArray& str) const;
 
-    DBBrowserDB* m_db;
+    DBBrowserDB& m_db;
     int m_rowCount;
     QStringList m_headers;
     typedef QList<QByteArrayList> DataType;
